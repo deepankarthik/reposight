@@ -2,58 +2,48 @@
 
 > Understand any codebase in minutes, not days.
 
-## Overview
+[![npm version](https://img.shields.io/npm/v/repolens.svg)](https://www.npmjs.com/package/repolens)
+[![CI](https://github.com/deepankarthik/repolens/actions/workflows/ci.yml/badge.svg)](https://github.com/deepankarthik/repolens/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-RepoLens is an open-source utility tool that scans a repository, extracts architecture (files, symbols, imports), and provides an interactive web UI for exploring codebases. Built for developers who need to understand unfamiliar code quickly — whether onboarding to a new team, reviewing legacy code, or conducting code reviews.
+RepoLens scans a repository, extracts its architecture (files, symbols, imports), and generates living documentation. Built for developers who need to understand unfamiliar code quickly — onboarding to a new team, reviewing pull requests, or navigating legacy codebases.
 
-## Features
-
-### Core Engine
-- **Multi-language Support** — TypeScript/JavaScript via AST; Python, Go, Rust, and Java via regex patterns
-- **Smart File Scoring** — Prioritizes important files using import graphs, git recency, test pairing, and directory proximity
-- **Symbol Extraction** — Functions, classes, methods, interfaces with line numbers
-- **Import Graph** — Dependency tracking with package resolution and external dependency detection
-- **Content-level Diffs** — Unified diffs, symbol additions/removals, and import changes between git refs
-- **Smart Filtering** — `.gitignore`/`.repolensignore` with negation, anchoring, and `**` globbing; `--include`/`--exclude` patterns; automatic generated file detection
-- **Heuristic Summaries** — Automatic file descriptions generated from symbols, imports, and path analysis
-
-### Interactive Explorer
-- **Import Graph Visualization** — Clickable node-link diagram showing file dependencies
-- **Architecture Layers** — Auto-detected layers (Presentation, Business Logic, Data, etc.) with file grouping
-- **File Summaries** — Every file has a description explaining its role and key symbols
-- **Search** — Find files, symbols, or summary content instantly
-- **Symbol Details** — Click any node to see symbols, imports, and file context
+**No code leaves your machine.** Everything runs locally.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
-pnpm install
+# Install globally
+npm install -g repolens
 
-# Build all packages
-pnpm run build
+# Scan any repository
+repolens scan /path/to/repo
 
-# Scan a repository
-pnpm dev:cli scan /path/to/repo
+# Output as JSON for the Interactive Explorer
+repolens scan /path/to/repo -f json
 
-# Scan with JSON output (powers the web UI)
-pnpm dev:cli scan /path/to/repo -f json
-
-# Open the Interactive Explorer
-open apps/web/public/index.html
+# Open the web UI
+open apps/web/public/index.html  # or just drag it into your browser
 ```
 
-## Interactive Explorer
+Or use without installing:
 
-The web UI provides a visual way to explore any codebase:
+```bash
+npx repolens scan .
+```
 
-1. **Graph View** — Import graph with clickable nodes. Click any file to see its symbols, imports, and summary.
-2. **Architecture View** — Auto-detected layers showing how the codebase is organized. Click files to navigate.
-3. **Search** — Type to find files, symbols, or concepts across the entire codebase.
+## Features
 
-**No server required** — just open `apps/web/public/index.html` in your browser. The UI reads `ARCHITECTURE.json` directly.
+- **Multi-language scanning** — TypeScript/JavaScript (AST), Python, Go, Rust, Java (regex)
+- **Smart file selection** — Prioritizes important files using import graphs, git recency, and test pairing
+- **Symbol extraction** — Functions, classes, interfaces with line numbers
+- **Dependency graphs** — Import tracking with package resolution
+- **Heuristic summaries** — Every file gets an automatic description (zero AI cost)
+- **AI-powered summaries** — Optional `--summarize` flag for LLM-generated explanations
+- **Content-level diffs** — Compare git refs with symbol/import tracking
+- **Interactive web UI** — Visual graph, architecture layers, search, and cross-references
 
-## CLI Reference
+## CLI Commands
 
 ### `scan [dir]`
 
@@ -65,20 +55,20 @@ Scan a repository and generate architecture documentation.
 | `-f, --format <format>` | `markdown` (default) or `json` |
 | `--no-mermaid` | Skip Mermaid diagram generation |
 | `--no-ai` | Skip AI-generated summary |
-| `--file-level` | Generate file-level dependency graph |
-| `--ignore-tests` | Exclude test files from scanning |
+| `--file-level` | File-level dependency graph (vs package-level) |
+| `--ignore-tests` | Exclude test files |
 | `--target-file <path>` | Score files relative to this target |
 | `--include <patterns...>` | Only include matching files |
 | `--exclude <patterns...>` | Exclude matching files |
-| `--summarize` | Generate AI-powered file summaries (requires API key) |
+| `--summarize` | AI-powered file summaries (requires API key) |
 
 **Outputs:**
-- `ARCHITECTURE.md` — Full architecture report with Mermaid diagrams
-- `ARCHITECTURE.json` — Structured JSON powering the Interactive Explorer
+- `ARCHITECTURE.md` — Architecture report with Mermaid diagrams
+- `ARCHITECTURE.json` — Structured JSON for the Interactive Explorer
 
 ### `diff [dir]`
 
-Compare two git refs with content-level diffs and symbol tracking.
+Compare two git refs with symbol and import tracking.
 
 | Option | Description |
 |--------|-------------|
@@ -88,76 +78,53 @@ Compare two git refs with content-level diffs and symbol tracking.
 
 ### `init [dir]`
 
-Generate a `.repolensrc.json` configuration file with sensible defaults.
+Generate a `.repolensrc.json` config file.
+
+## Interactive Explorer
+
+The web UI (`apps/web/public/index.html`) provides a visual way to explore any codebase:
+
+1. **Graph View** — Clickable import graph. Click nodes to see symbols, imports, and summaries.
+2. **Architecture View** — Auto-detected layers (Presentation, Business Logic, Data, etc.).
+3. **Data Flow** — Trace dependencies from entry points through the codebase.
+4. **Search** — Find files, symbols, or concepts with keyboard navigation.
+5. **Source Viewer** — View file contents with syntax highlighting.
+6. **Export** — Download the graph as a PNG image.
+
+**No server required** — open `index.html` directly in your browser. It reads `ARCHITECTURE.json` from the same directory.
 
 ## Configuration
 
-RepoLens can be configured via environment variables or a `.repolensrc.json` file.
+Create a `.repolensrc.json` in your repo root:
 
-Example `.repolensrc.json`:
 ```json
 {
-  "maxContextFiles": 100,
-  "maxContextBytes": 150000,
+  "maxContextFiles": 80,
+  "maxContextBytes": 120000,
   "maxFileBytes": 80000,
   "maxChunkChars": 6000,
-  "aiProviderModel": "claude-3-sonnet",
+  "aiProviderModel": "gpt-4o-mini",
   "includeMermaid": true,
   "logLevel": "info"
 }
 ```
 
-## Environment Variables
+Or use environment variables:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `AI_PROVIDER_BASE_URL` | `https://api.openai.com/v1` | AI provider endpoint |
-| `AI_PROVIDER_API_KEY` | _(none)_ | API key (triggers remote provider) |
+| `AI_PROVIDER_API_KEY` | _(none)_ | API key for AI summaries |
 | `AI_PROVIDER_MODEL` | `gpt-4o-mini` | Model name |
 | `REPOLENS_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `REPOLENS_MAX_CONTEXT_FILES` | `80` | Max files to include in context |
-| `REPOLENS_MAX_CONTEXT_BYTES` | `120000` | Max total bytes of context |
-| `REPOLENS_MAX_FILE_BYTES` | `80000` | Max bytes per individual file |
-| `REPOLENS_MAX_CHUNK_CHARS` | `6000` | Max characters per chunk |
-| `REPOLENS_INCLUDE_MERMAID` | `true` | Include Mermaid diagrams |
 
 ## How It Works
 
-### Smart File Scoring
-
-Files are scored and sorted before inclusion. Lower score = higher priority:
-
-```
-score = base * 10 + importScore * 2 + recencyScore * 3 + testPairScore * 4 + proximityScore * 2 + samePackageScore * 1
-```
-
-| Component | Weight | Description |
-|-----------|--------|-------------|
-| `base` | 10 | Config files (0) > src/ files (1) > code files (2) > other (3) |
-| `importScore` | 2 | Transitive import graph traversal (depth 2) |
-| `recencyScore` | 3 | Git log recency (7-day exponential decay) + commit frequency |
-| `testPairScore` | 4 | 1.0 if test/source pair match, 0.3 if same directory |
-| `proximityScore` | 2 | Directory depth overlap with target file |
-| `samePackageScore` | 1 | 0.5 if in same package/apps directory |
-
-### Heuristic Summaries
-
-Every file gets an automatic summary generated from:
-- **File path** — Detects role (entry point, config, types, utils, etc.)
-- **Symbols** — Lists key functions, classes, and interfaces
-- **Imports** — Identifies external dependencies and internal modules
-
-No AI required. Summaries are generated instantly during scanning.
-
-### Output Formats
-
-**Markdown** — Human-readable reports with Mermaid.js diagrams:
-- Overview, Module Map, Key Symbols, Dependency Graph
-
-**JSON** — Structured data powering the Interactive Explorer:
-- Files with symbols, imports, and summaries
-- Import graph with packages and external dependencies
-- Architecture layers and key symbols
+1. **Discover** — Walk the directory tree, respecting `.gitignore` and generated file patterns
+2. **Score** — Rank files by import depth, git recency, test pairing, and directory proximity
+3. **Extract** — Parse symbols (AST for TS/JS, regex for others) and build import graphs
+4. **Summarize** — Generate heuristic descriptions from paths, symbols, and imports
+5. **Output** — Produce Markdown reports, JSON data, or both
 
 ## Project Structure
 
@@ -165,41 +132,31 @@ No AI required. Summaries are generated instantly during scanning.
 repolens/
 ├── packages/
 │   ├── shared/           # Core types, config, errors, logger
-│   ├── context-engine/   # Scanner, symbol extractor, import graph, diff analyzer, summaries
-│   └── ai/               # AI provider (optional)
+│   ├── context-engine/   # Scanner, symbol extractor, import graph
+│   └── ai/               # AI provider (local + remote)
 ├── apps/
 │   ├── cli/              # CLI: scan, diff, init commands
 │   └── web/              # Interactive Explorer (static HTML)
-├── .github/
-│   └── workflows/
-│       └── ci.yml        # GitHub Actions CI
-├── package.json
-├── pnpm-workspace.yaml
-├── tsconfig.json
-└── ROADMAP.md            # Product roadmap
+└── .github/workflows/    # CI pipeline
 ```
 
 ## Development
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Build all packages
 pnpm run build
-
-# Typecheck
-pnpm run typecheck
-
-# Run tests
 pnpm test
-
-# Run CLI in dev mode
-pnpm dev:cli
-
-# Clean build artifacts
-pnpm run clean
+pnpm dev:cli scan .
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Security
+
+- All processing happens locally — no code is uploaded anywhere
+- AI summaries only sent to your configured provider (OpenAI, Anthropic, etc.)
+- SSRF protection on AI provider URLs (HTTPS required, domain allowlist, blocked ports)
+- Path traversal protection on file access
 
 ## License
 

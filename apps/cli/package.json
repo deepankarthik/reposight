@@ -1,29 +1,47 @@
 {
-  "name": "@repolens/cli",
+  "name": "repolens",
   "version": "0.1.0",
-  "private": true,
+  "description": "Understand any codebase in minutes. Scans repositories, extracts architecture, and generates living documentation.",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/bundle.mjs",
   "bin": {
     "repolens": "./dist/index.js"
   },
-  "exports": {
-    ".": {
-      "development": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+  "files": [
+    "dist/"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepankarthik/repolens.git"
+  },
+  "homepage": "https://github.com/deepankarthik/repolens",
+  "bugs": {
+    "url": "https://github.com/deepankarthik/repolens/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "codebase",
+    "architecture",
+    "documentation",
+    "code-analysis",
+    "dependency-graph",
+    "code-review",
+    "onboarding",
+    "living-docs"
+  ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "node ../../build-cli.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@repolens/shared": "workspace:*",
-    "@repolens/context-engine": "workspace:*",
-    "@repolens/ai": "workspace:*",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
