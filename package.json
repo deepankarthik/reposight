@@ -1,0 +1,21 @@
+{
+  "name": "repolens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generate living documentation from codebases — architecture maps, dependency graphs, and data flow traces.",
+  "type": "module",
+  "packageManager": "pnpm@9.12.3",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "dev:cli": "pnpm --filter @repolens/cli dev",
+    "clean": "pnpm -r exec rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.6"
+  }
+}

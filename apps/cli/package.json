@@ -1,0 +1,29 @@
+{
+  "name": "@repolens/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "repolens": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@repolens/shared": "workspace:*",
+    "@repolens/context-engine": "workspace:*",
+    "@repolens/ai": "workspace:*",
+    "commander": "^12.1.0"
+  }
+}
