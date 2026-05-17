@@ -185,13 +185,8 @@ program
   .option("--no-ai", "Skip AI-generated summary")
   .option("--file-level", "Generate file-level dependency graph instead of package-level")
   .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean }) => {
-    if (!dir) {
-      process.stderr.write("repolens: missing required argument 'dir'\n");
-      process.exitCode = 1;
-      return;
-    }
     try {
-      await runScan(dir, options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel });
+      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel });
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
@@ -202,13 +197,13 @@ program
   .command("trace [dir] [query]")
   .description("Trace code flow through a repository")
   .action(async (dir: string | undefined, query: string | undefined) => {
-    if (!dir || !query) {
-      process.stderr.write("repolens: missing required arguments 'dir' and 'query'\n");
+    if (!query) {
+      process.stderr.write("repolens: missing required argument 'query'\n");
       process.exitCode = 1;
       return;
     }
     try {
-      await runTrace(dir, query);
+      await runTrace(dir ?? ".", query);
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
@@ -222,13 +217,8 @@ program
   .option("--head <ref>", "Head git ref (defaults to HEAD)", "HEAD")
   .option("-o, --output <dir>", "Output directory (defaults to repo root)")
   .action(async (dir: string | undefined, options: { base: string; head: string; output?: string }) => {
-    if (!dir) {
-      process.stderr.write("repolens: missing required argument 'dir'\n");
-      process.exitCode = 1;
-      return;
-    }
     try {
-      await runDiff(dir, options.base, options.head, options.output ?? "");
+      await runDiff(dir ?? ".", options.base, options.head, options.output ?? "");
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
