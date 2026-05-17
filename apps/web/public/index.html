@@ -343,7 +343,7 @@
       let html = '';
       
       if (file.summary) {
-        html += `<div class="summary-box">${file.summary}</div>`;
+        html += `<div class="summary-box">${escapeHtml(file.summary)}</div>`;
       }
 
       html += `
@@ -351,11 +351,11 @@
           <div class="stat"><div class="stat-value">${symbolCount}</div><div class="stat-label">Symbols</div></div>
           <div class="stat"><div class="stat-value">${importCount}</div><div class="stat-label">Imports</div></div>
         </div>
-        <div class="file-path">${file.path}</div>
+        <div class="file-path">${escapeHtml(file.path)}</div>
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
-          <div class="language-tag">${file.language || 'unknown'}</div>
-          <div class="flow-role" style="color:${layer.color};border-color:${layer.color};cursor:default">${layer.name} Layer</div>
-          <button class="export-btn" style="margin:0;padding:2px 8px;font-size:11px" onclick="viewFileSource('${file.path}')">View Source</button>
+          <div class="language-tag">${escapeHtml(file.language || 'unknown')}</div>
+          <div class="flow-role" style="color:${layer.color};border-color:${layer.color};cursor:default">${escapeHtml(layer.name)} Layer</div>
+          <button class="export-btn" style="margin:0;padding:2px 8px;font-size:11px" onclick="viewFileSource('${escapeJs(file.path)}')">View Source</button>
         </div>
         <div id="file-content-viewer"></div>
       `;
@@ -366,7 +366,7 @@
           const cls = s.kind === 'function' ? 'fn' : s.kind === 'class' ? 'cls' : s.kind === 'interface' ? 'int' : s.kind === 'method' ? 'fn' : 'var';
           const refCount = (crossRefIndex[s.name.toLowerCase()] || []).length;
           const refBadge = refCount > 1 ? ` <span style="color:#666;font-size:10px">(${refCount})</span>` : '';
-          html += `<span class="symbol-tag ${cls}" style="cursor:pointer" onclick="showSymbolCrossRef('${s.name}', ${s.line})">${s.kind} ${s.name}${s.line ? ' (L' + s.line + ')' : ''}${refBadge}</span>`;
+          html += `<span class="symbol-tag ${cls}" style="cursor:pointer" onclick="showSymbolCrossRef('${escapeJs(s.name)}', ${s.line})">${escapeHtml(s.kind)} ${escapeHtml(s.name)}${s.line ? ' (L' + s.line + ')' : ''}${refBadge}</span>`;
         });
         html += `</div>`;
       }
@@ -374,7 +374,7 @@
       if (file.imports && file.imports.length > 0) {
         html += `<div class="section"><h3>Imports</h3>`;
         file.imports.forEach(imp => {
-          html += `<a class="import-link" onclick="highlightNode('${imp}')">→ ${imp}</a>`;
+          html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">→ ${escapeHtml(imp)}</a>`;
         });
         html += `</div>`;
       }
@@ -384,7 +384,7 @@
         html += `<div class="section"><h3>Imported By (${importedBy.length})</h3>`;
         importedBy.forEach(imp => {
           const name = imp.split('/').pop();
-          html += `<a class="import-link" onclick="highlightNode('${imp}')">← ${name}</a>`;
+          html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">← ${escapeHtml(name)}</a>`;
         });
         html += `</div>`;
       }
@@ -449,7 +449,7 @@
         html += `<h4 style="color: ${layer.color};">${layer.name} (${layer.files.length} files)</h4>`;
         html += '<div class="files">';
         layer.files.forEach(f => {
-          html += `<span class="arch-file" onclick="highlightNode('${f.path}')">${f.path.split('/').pop()}</span>`;
+          html += `<span class="arch-file" onclick="highlightNode('${escapeJs(f.path)}')">${escapeHtml(f.path.split('/').pop())}</span>`;
         });
         html += '</div>';
         
@@ -500,8 +500,8 @@
       entryPoints.forEach(ep => {
         const layer = getLayerForFile(ep.path);
         html += `<div class="flow-section" style="border-left: 3px solid ${layer.color};">`;
-        html += `<h4 style="color: ${layer.color};">${ep.path.split('/').pop()}</h4>`;
-        html += `<p style="color: #888; font-size: 12px; margin-bottom: 12px;">${ep.summary || 'No summary available.'}</p>`;
+        html += `<h4 style="color: ${layer.color};">${escapeHtml(ep.path.split('/').pop())}</h4>`;
+        html += `<p style="color: #888; font-size: 12px; margin-bottom: 12px;">${escapeHtml(ep.summary || 'No summary available.')}</p>`;
         
         // Trace flow
         const visited = new Set();
@@ -528,8 +528,8 @@
           const indent = step.depth * 20;
           const arrow = step.depth > 0 ? '<span class="flow-arrow">→</span>' : '';
           html += `<div class="flow-item" style="padding-left: ${indent}px;">`;
-          html += `${arrow} <span class="flow-role" style="color:${step.layer.color};border-color:${step.layer.color}">${step.layer.name}</span>`;
-          html += `<span class="arch-file" onclick="highlightNode('${step.path}')" style="margin-left: 8px;">${step.path.split('/').pop()}</span>`;
+          html += `${arrow} <span class="flow-role" style="color:${step.layer.color};border-color:${step.layer.color}">${escapeHtml(step.layer.name)}</span>`;
+          html += `<span class="arch-file" onclick="highlightNode('${escapeJs(step.path)}')" style="margin-left: 8px;">${escapeHtml(step.path.split('/').pop())}</span>`;
           html += `</div>`;
         });
         html += '</div>';
@@ -575,7 +575,11 @@
     }
 
     function escapeHtml(text) {
-      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+    }
+
+    function escapeJs(str) {
+      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
     }
 
     function buildSearchIndex() {
@@ -731,8 +735,8 @@
       html += `<h3>Referenced In (${otherRefs.length})</h3>`;
       otherRefs.slice(0, 10).forEach(ref => {
         const fileName = ref.file.split('/').pop();
-        html += `<div class="crossref-item" onclick="highlightNode('${ref.file}')">`;
-        html += `<span class="crossref-file">${fileName}</span>`;
+        html += `<div class="crossref-item" onclick="highlightNode('${escapeJs(ref.file)}')">`;
+        html += `<span class="crossref-file">${escapeHtml(fileName)}</span>`;
         if (ref.line) html += `<span class="crossref-line">L${ref.line}</span>`;
         html += `</div>`;
       });
