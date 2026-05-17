@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoLens Explorer</title>
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #0a0a0f; color: #ddd; }
+    header { background: #12121a; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222; }
+    header h1 { font-size: 18px; font-weight: 600; color: #4a9eff; }
+    header .subtitle { color: #666; font-size: 12px; margin-left: 12px; }
+    .header-left { display: flex; align-items: center; }
+    .search-bar { display: flex; gap: 10px; align-items: center; }
+    .search-bar input { padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a24; color: white; width: 250px; font-size: 14px; }
+    .search-bar input::placeholder { color: #555; }
+    .search-bar input:focus { outline: none; border-color: #4a9eff; }
+    .main { flex: 1; display: flex; overflow: hidden; }
+    #graph { flex: 1; background: #08080c; }
+    .sidebar { width: 380px; background: #12121a; border-left: 1px solid #222; overflow-y: auto; padding: 20px; }
+    .sidebar h3 { font-size: 13px; color: #666; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .file-path { font-size: 15px; color: #4a9eff; margin-bottom: 8px; font-weight: 500; word-break: break-all; }
+    .language-tag { display: inline-block; background: #2a2a3a; color: #888; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 12px; }
+    .section { margin-bottom: 16px; }
+    .symbol-tag { display: inline-block; background: #1e1e2a; color: #aaa; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin: 2px; border: 1px solid #333; }
+    .symbol-tag.fn { color: #67c23a; border-color: #3d6e3d; }
+    .symbol-tag.cls { color: #e6a23c; border-color: #6e5230; }
+    .symbol-tag.int { color: #9b64d3; border-color: #4a3069; }
+    .symbol-tag.var { color: #4a9eff; border-color: #2a4a6e; }
+    .import-link { display: block; color: #666; font-size: 12px; padding: 4px 0; text-decoration: none; cursor: pointer; }
+    .import-link:hover { color: #4a9eff; }
+    .empty-state { color: #444; text-align: center; padding: 60px 20px; font-size: 14px; }
+    .stats { display: flex; gap: 15px; margin-bottom: 20px; }
+    .stat { text-align: center; background: #1a1a24; padding: 12px 16px; border-radius: 8px; flex: 1; }
+    .stat-value { font-size: 22px; font-weight: 600; color: #4a9eff; }
+    .stat-label { font-size: 10px; color: #666; text-transform: uppercase; margin-top: 4px; }
+    .legend { display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #666; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .loading { text-align: center; padding: 40px; color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>RepoLens</h1>
+      <span class="subtitle">Interactive Codebase Explorer</span>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Search files or symbols...">
+    </div>
+  </header>
+  <div class="main">
+    <div id="graph"></div>
+    <div class="sidebar" id="sidebar">
+      <div class="empty-state">
+        <p>Click a node to explore</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let network = null;
+    let nodesDataSet = null;
+    let edgesDataSet = null;
+    let allNodesData = [];
+    let repoData = null;
+
+    async function loadRepoData() {
+      try {
+        const response = await fetch('./ARCHITECTURE.json');
+        if (!response.ok) throw new Error('Failed to load');
+        repoData = await response.json();
+        initGraph(repoData);
+      } catch (e) {
+        console.log('Using embedded data');
+        repoData = getEmbeddedData();
+        initGraph(repoData);
+      }
+    }
+
+    function getEmbeddedData() {
+      return {
+        version: "0.1.0",
+        summary: { includedFiles: 24 },
+        files: [
+          { path: "packages/ai/src/doc-generator.ts", language: "typescript", symbols: [{name:"callProvider",kind:"function",line:35},{name:"formatContext",kind:"function",line:46},{name:"generateArchitectureSummary",kind:"function",line:56},{name:"generateTraceExplanation",kind:"function",line:69},{name:"generateDiffAnalysis",kind:"function",line:83}], imports: ["@repolens/shared","./types.js"] },
+          { path: "packages/ai/src/index.ts", language: "typescript", symbols: [], imports: ["./local-provider.js","./provider-factory.js","./remote-provider.js","./types.js","./summarize.js","./doc-generator.js"] },
+          { path: "packages/ai/src/local-provider.ts", language: "typescript", symbols: [{name:"LocalAIProvider",kind:"class",line:21},{name:"streamChat",kind:"method",line:24},{name:"chat",kind:"method",line:39}], imports: ["./types.js"] },
+          { path: "packages/ai/src/provider-factory.ts", language: "typescript", symbols: [{name:"createAIProvider",kind:"function",line:6}], imports: ["@repolens/shared","./local-provider.js","./remote-provider.js","./types.js"] },
+          { path: "packages/ai/src/remote-provider.ts", language: "typescript", symbols: [{name:"RemoteAIProvider",kind:"class",line:55},{name:"validateBaseUrl",kind:"function",line:23},{name:"streamChat",kind:"method",line:62}], imports: ["@repolens/shared","./types.js"] },
+          { path: "packages/ai/src/types.ts", language: "typescript", symbols: [{name:"AIProvider",kind:"interface",line:9},{name:"AIStreamRequest",kind:"interface",line:3}], imports: ["@repolens/shared"] },
+          { path: "packages/ai/src/summarize.ts", language: "typescript", symbols: [{name:"createSummarizeFn",kind:"function",line:6}], imports: ["@repolens/shared","./types.js"] },
+          { path: "packages/context-engine/src/cache.ts", language: "typescript", symbols: [{name:"FileCache",kind:"class",line:5},{name:"get",kind:"method",line:12},{name:"set",kind:"method",line:20}], imports: [] },
+          { path: "packages/context-engine/src/chunker.ts", language: "typescript", symbols: [{name:"chunkFile",kind:"function",line:3}], imports: [] },
+          { path: "packages/context-engine/src/cached-scanner.ts", language: "typescript", symbols: [{name:"scanRepository",kind:"function",line:264}], imports: ["./chunker.js","./ignore.js","./language.js","./symbol-extractor.js","./cache.js","./import-graph.js","./git-recent.js","./test-pairing.js","./proximity.js"] },
+          { path: "packages/context-engine/src/diff-analyzer.ts", language: "typescript", symbols: [{name:"analyzeDiff",kind:"function",line:80},{name:"formatDiffReport",kind:"function",line:140}], imports: ["./symbol-extractor.js","./language.js"] },
+          { path: "packages/context-engine/src/ignore.ts", language: "typescript", symbols: [{name:"shouldIgnorePath",kind:"function",line:152},{name:"isGeneratedFile",kind:"function",line:167},{name:"loadIgnoreFiles",kind:"function",line:127}], imports: [] },
+          { path: "packages/context-engine/src/import-graph.ts", language: "typescript", symbols: [{name:"buildImportGraph",kind:"function",line:107},{name:"getImportScore",kind:"function",line:180},{name:"getTransitiveImportScore",kind:"function",line:187}], imports: [] },
+          { path: "packages/context-engine/src/index.ts", language: "typescript", symbols: [], imports: ["./cache.js","./chunker.js","./ignore.js","./language.js","./symbol-extractor.js","./import-graph.js","./git-recent.js","./proximity.js","./test-pairing.js","./cached-scanner.js","./report-generator.js","./diff-analyzer.js","./json-output.js","./progress.js","./symbol-crossref.js"] },
+          { path: "packages/context-engine/src/language.ts", language: "typescript", symbols: [{name:"languageFromPath",kind:"function",line:31},{name:"isLikelyTextFile",kind:"function",line:35}], imports: [] },
+          { path: "packages/context-engine/src/progress.ts", language: "typescript", symbols: [{name:"formatProgress",kind:"function",line:13},{name:"createProgressCallback",kind:"function",line:7}], imports: [] },
+          { path: "packages/context-engine/src/report-generator.ts", language: "typescript", symbols: [{name:"generateArchitectureReport",kind:"function",line:216},{name:"generateMermaidDiagram",kind:"function",line:240}], imports: ["./import-graph.js"] },
+          { path: "packages/context-engine/src/symbol-crossref.ts", language: "typescript", symbols: [{name:"buildSymbolCrossReference",kind:"function",line:11},{name:"getTopReferencedSymbols",kind:"function",line:82},{name:"getSymbolDependencies",kind:"function",line:95}], imports: ["@repolens/shared"] },
+          { path: "packages/context-engine/src/symbol-extractor.ts", language: "typescript", symbols: [{name:"extractSymbols",kind:"function",line:379},{name:"extractImportsFromSource",kind:"function",line:405}], imports: ["typescript"] },
+          { path: "packages/context-engine/src/test-pairing.ts", language: "typescript", symbols: [{name:"isTestFile",kind:"function",line:4},{name:"isSourceFile",kind:"function",line:14},{name:"getTestPairScore",kind:"function",line:61}], imports: [] },
+          { path: "packages/context-engine/src/json-output.ts", language: "typescript", symbols: [{name:"generateJsonReport",kind:"function",line:78}], imports: ["@repolens/shared","./import-graph.js"] },
+          { path: "packages/shared/src/config.ts", language: "typescript", symbols: [{name:"readConfigFromEnv",kind:"function",line:41},{name:"loadConfigFile",kind:"function",line:68},{name:"mergeConfig",kind:"function",line:78},{name:"validateConfig",kind:"function",line:83}], imports: [] },
+          { path: "packages/shared/src/types.ts", language: "typescript", symbols: [{name:"CodeSymbol",kind:"interface",line:3},{name:"ContextFile",kind:"interface",line:9},{name:"RepositoryContext",kind:"interface",line:26}], imports: [] },
+          { path: "apps/cli/src/index.ts", language: "typescript", symbols: [{name:"runScan",kind:"function",line:19},{name:"runTrace",kind:"function",line:90},{name:"runDiff",kind:"function",line:118}], imports: ["@repolens/shared","@repolens/context-engine","@repolens/ai"] },
+        ]
+      };
+    }
+
+    function initGraph(data) {
+      const container = document.getElementById('graph');
+      const sidebar = document.getElementById('sidebar');
+
+      // Build nodes from files
+      allNodesData = data.files.map((file) => {
+        const name = file.path.split('/').pop();
+        const hasSymbols = file.symbols && file.symbols.length > 0;
+        const isCore = file.path.includes('context-engine') || file.path.includes('shared');
+        const isEntry = file.path.includes('index.ts');
+        
+        return {
+          id: file.path,
+          label: name,
+          title: file.path,
+          size: isEntry ? 35 : (isCore ? 28 : (hasSymbols ? 22 : 16)),
+          color: isEntry ? '#e6a23c' : (isCore ? '#4a9eff' : '#67c23a'),
+          font: { color: '#ddd', size: 11 }
+        };
+      });
+
+      // Build edges - improved matching
+      const edgesList = [];
+      const filePaths = data.files.map(f => f.path);
+      const pathToIndex = {};
+      filePaths.forEach((p, i) => pathToIndex[p] = i);
+      
+      data.files.forEach((file, idx) => {
+        if (!file.imports || file.imports.length === 0) return;
+        
+        file.imports.forEach(imp => {
+          // Skip external packages
+          if (!imp.startsWith('.') && !imp.startsWith('/')) return;
+          
+          // Try to resolve import to actual file
+          const baseDir = file.path.substring(0, file.path.lastIndexOf('/'));
+          const cleanImport = imp.replace('./', '').replace('.js', '.ts').replace('.jsx', '.tsx');
+          
+          // Try exact match
+          const exactMatch = baseDir + '/' + cleanImport;
+          if (pathToIndex[exactMatch] !== undefined) {
+            edgesList.push({ from: file.path, to: exactMatch, color: { color: '#2a2a3a' }, width: 1 });
+            return;
+          }
+          
+          // Try finding by filename
+          const importFilename = cleanImport.split('/').pop();
+          const possibleMatches = filePaths.filter(p => p.endsWith(importFilename) && p !== file.path);
+          if (possibleMatches.length > 0) {
+            edgesList.push({ from: file.path, to: possibleMatches[0], color: { color: '#2a2a3a' }, width: 1 });
+          }
+        });
+      });
+
+      nodesDataSet = new vis.DataSet(allNodesData);
+      edgesDataSet = new vis.DataSet(edgesList);
+
+      const options = {
+        nodes: { shape: 'dot', font: { face: 'arial' } },
+        edges: { arrows: { to: { enabled: true, scaleFactor: 0.5 } }, width: 1, smooth: { type: 'curvedCW', roundness: 0.1 } },
+        physics: { stabilization: { iterations: 100, fit: true }, barnesHut: { gravitationalConstant: -2000, springLength: 120 } },
+        interaction: { hover: true, tooltipDelay: 100, dragNodes: true, dragView: true, zoomView: true }
+      };
+
+      network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options);
+
+      network.on('click', function(params) {
+        if (params.nodes.length > 0) {
+          showFileDetails(params.nodes[0], data);
+        }
+      });
+
+      // Update sidebar with stats
+      const totalSymbols = data.files.reduce((sum, f) => sum + (f.symbols ? f.symbols.length : 0), 0);
+      const totalImports = data.files.reduce((sum, f) => sum + (f.imports ? f.imports.length : 0), 0);
+      
+      sidebar.innerHTML = `
+        <div class="stats">
+          <div class="stat"><div class="stat-value">${data.summary.includedFiles || data.files.length}</div><div class="stat-label">Files</div></div>
+          <div class="stat"><div class="stat-value">${totalSymbols}</div><div class="stat-label">Symbols</div></div>
+          <div class="stat"><div class="stat-value">${edgesList.length}</div><div class="stat-label">Connections</div></div>
+        </div>
+        <div class="empty-state">
+          <p>Click a node to explore</p>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#e6a23c"></div> Entry Point</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div> Core Package</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#67c23a"></div> Other</div>
+        </div>
+      `;
+    }
+
+    function showFileDetails(filePath, data) {
+      const file = data.files.find(f => f.path === filePath);
+      if (!file) return;
+
+      const sidebar = document.getElementById('sidebar');
+      const symbolCount = file.symbols ? file.symbols.length : 0;
+      const importCount = file.imports ? file.imports.length : 0;
+
+      let html = `
+        <div class="stats">
+          <div class="stat"><div class="stat-value">${symbolCount}</div><div class="stat-label">Symbols</div></div>
+          <div class="stat"><div class="stat-value">${importCount}</div><div class="stat-label">Imports</div></div>
+        </div>
+        <div class="file-path">${file.path}</div>
+        <div class="language-tag">${file.language || 'unknown'}</div>
+      `;
+
+      if (file.symbols && file.symbols.length > 0) {
+        html += `<div class="section"><h3>Symbols</h3>`;
+        file.symbols.forEach(s => {
+          const cls = s.kind === 'function' ? 'fn' : s.kind === 'class' ? 'cls' : s.kind === 'interface' ? 'int' : s.kind === 'method' ? 'fn' : 'var';
+          html += `<span class="symbol-tag ${cls}">${s.kind} ${s.name}${s.line ? ' (L' + s.line + ')' : ''}</span>`;
+        });
+        html += `</div>`;
+      }
+
+      if (file.imports && file.imports.length > 0) {
+        html += `<div class="section"><h3>Imports</h3>`;
+        file.imports.forEach(imp => {
+          html += `<a class="import-link" onclick="highlightNode('${imp}')">→ ${imp}</a>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#e6a23c"></div> Entry Point</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div> Core Package</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#67c23a"></div> Other</div>
+        </div>
+      `;
+
+      sidebar.innerHTML = html;
+    }
+
+    function highlightNode(imp) {
+      const cleanImport = imp.replace('./', '').replace('.js', '.ts').replace('.jsx', '.tsx');
+      const matches = allNodesData.filter(n => 
+        n.id.includes(cleanImport) || 
+        n.id.endsWith(imp.split('/').pop().replace('.js', '.ts')) ||
+        imp.includes(n.id.split('/').pop())
+      );
+      
+      if (matches.length > 0) {
+        network.selectNodes([matches[0].id]);
+        network.focus(matches[0].id, { animation: true, scale: 1.2 });
+        showFileDetails(matches[0].id, repoData);
+      }
+    }
+
+    // Search functionality
+    document.getElementById('search').addEventListener('input', function(e) {
+      const query = e.target.value.toLowerCase();
+      if (!query || !nodesDataSet) {
+        if (nodesDataSet) {
+          nodesDataSet.update(allNodesData.map(n => ({ id: n.id, color: n.color, size: n.size })));
+        }
+        return;
+      }
+
+      const matches = allNodesData.filter(n => 
+        n.id.toLowerCase().includes(query) ||
+        (repoData?.files.find(f => f.path === n.id)?.symbols?.some(s => s.name.toLowerCase().includes(query)))
+      );
+
+      const updates = allNodesData.map(n => ({
+        id: n.id,
+        color: matches.includes(n) ? '#ffd700' : '#222',
+        size: matches.includes(n) ? n.size + 10 : n.size * 0.6
+      }));
+      nodesDataSet.update(updates);
+
+      if (matches.length > 0) {
+        network.focus(matches[0].id, { animation: true });
+      }
+    });
+
+    // Initialize
+    loadRepoData();
+  </script>
+</body>
+</html>

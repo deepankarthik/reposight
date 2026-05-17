@@ -1,0 +1,1673 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "rootDir": "/home/deepankarthik/projects/repolens",
+    "scannedFiles": 66,
+    "includedFiles": 49,
+    "totalBytes": 120000,
+    "truncated": true,
+    "skippedFiles": 0,
+    "cacheHits": 0,
+    "cacheMisses": 49
+  },
+  "files": [
+    {
+      "path": "apps/cli/package.json",
+      "language": "json",
+      "content": "",
+      "size": 645,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "content": "",
+      "size": 583,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "apps/cli/tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 281,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/ai/tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 206,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/ai/package.json",
+      "language": "json",
+      "content": "",
+      "size": 453,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/context-engine/package.json",
+      "language": "json",
+      "content": "",
+      "size": 493,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/context-engine/tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 206,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/shared/tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 155,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/shared/package.json",
+      "language": "json",
+      "content": "",
+      "size": 443,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 536,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "content": "",
+      "size": 6370,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "apps/web/public/index.html",
+      "language": "html",
+      "content": "",
+      "size": 10900,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/ai/src/doc-generator.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 3788,
+      "symbols": [
+        {
+          "name": "callProvider",
+          "kind": "function",
+          "line": 35
+        },
+        {
+          "name": "formatContext",
+          "kind": "function",
+          "line": 46
+        },
+        {
+          "name": "generateArchitectureSummary",
+          "kind": "function",
+          "line": 56
+        },
+        {
+          "name": "generateTraceExplanation",
+          "kind": "function",
+          "line": 69
+        },
+        {
+          "name": "generateDiffAnalysis",
+          "kind": "function",
+          "line": 83
+        }
+      ],
+      "imports": [
+        "@repolens/shared",
+        "./types.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/index.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 210,
+      "symbols": [],
+      "imports": [
+        "./local-provider.js",
+        "./provider-factory.js",
+        "./remote-provider.js",
+        "./types.js",
+        "./summarize.js",
+        "./doc-generator.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/local-provider.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1551,
+      "symbols": [
+        {
+          "name": "simulateStreaming",
+          "kind": "function",
+          "line": 3
+        },
+        {
+          "name": "LocalAIProvider",
+          "kind": "class",
+          "line": 21
+        },
+        {
+          "name": "name",
+          "kind": "method",
+          "line": 22
+        },
+        {
+          "name": "streamChat",
+          "kind": "method",
+          "line": 24
+        },
+        {
+          "name": "chat",
+          "kind": "method",
+          "line": 39
+        }
+      ],
+      "imports": [
+        "./types.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/provider-factory.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 513,
+      "symbols": [
+        {
+          "name": "createAIProvider",
+          "kind": "function",
+          "line": 6
+        }
+      ],
+      "imports": [
+        "@repolens/shared",
+        "./local-provider.js",
+        "./remote-provider.js",
+        "./types.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/remote-provider.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1617,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./remote-provider.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/remote-provider.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 4672,
+      "symbols": [
+        {
+          "name": "RemoteProviderOptions",
+          "kind": "interface",
+          "line": 4
+        },
+        {
+          "name": "validateBaseUrl",
+          "kind": "function",
+          "line": 23
+        },
+        {
+          "name": "StreamDelta",
+          "kind": "interface",
+          "line": 42
+        },
+        {
+          "name": "StreamChoice",
+          "kind": "interface",
+          "line": 46
+        },
+        {
+          "name": "StreamEvent",
+          "kind": "interface",
+          "line": 51
+        },
+        {
+          "name": "RemoteAIProvider",
+          "kind": "class",
+          "line": 55
+        },
+        {
+          "name": "name",
+          "kind": "method",
+          "line": 56
+        },
+        {
+          "name": "streamChat",
+          "kind": "method",
+          "line": 62
+        },
+        {
+          "name": "chat",
+          "kind": "method",
+          "line": 118
+        }
+      ],
+      "imports": [
+        "@repolens/shared",
+        "./types.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/summarize.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 928,
+      "symbols": [
+        {
+          "name": "createSummarizeFn",
+          "kind": "function",
+          "line": 6
+        }
+      ],
+      "imports": [
+        "@repolens/shared",
+        "./types.js"
+      ]
+    },
+    {
+      "path": "packages/ai/src/types.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 333,
+      "symbols": [
+        {
+          "name": "AIStreamRequest",
+          "kind": "interface",
+          "line": 3
+        },
+        {
+          "name": "AIProvider",
+          "kind": "interface",
+          "line": 9
+        }
+      ],
+      "imports": [
+        "@repolens/shared"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/cache.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 2754,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./cache.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/cache.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1928,
+      "symbols": [
+        {
+          "name": "CacheEntry",
+          "kind": "interface",
+          "line": 3
+        },
+        {
+          "name": "FileCache",
+          "kind": "class",
+          "line": 13
+        },
+        {
+          "name": "entries",
+          "kind": "method",
+          "line": 14
+        },
+        {
+          "name": "maxEntries",
+          "kind": "method",
+          "line": 15
+        },
+        {
+          "name": "hits",
+          "kind": "method",
+          "line": 16
+        },
+        {
+          "name": "misses",
+          "kind": "method",
+          "line": 17
+        },
+        {
+          "name": "get",
+          "kind": "method",
+          "line": 23
+        },
+        {
+          "name": "set",
+          "kind": "method",
+          "line": 34
+        },
+        {
+          "name": "invalidate",
+          "kind": "method",
+          "line": 41
+        },
+        {
+          "name": "clear",
+          "kind": "method",
+          "line": 45
+        },
+        {
+          "name": "getStats",
+          "kind": "method",
+          "line": 51
+        },
+        {
+          "name": "evictOldest",
+          "kind": "method",
+          "line": 61
+        }
+      ],
+      "imports": [
+        "@repolens/shared"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/chunker.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1231,
+      "symbols": [
+        {
+          "name": "chunkFile",
+          "kind": "function",
+          "line": 3
+        }
+      ],
+      "imports": [
+        "@repolens/shared"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/git-recent.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 2984,
+      "symbols": [
+        {
+          "name": "RecentFileEntry",
+          "kind": "interface",
+          "line": 7
+        },
+        {
+          "name": "isGitRepo",
+          "kind": "function",
+          "line": 15
+        },
+        {
+          "name": "getGitLog",
+          "kind": "function",
+          "line": 24
+        },
+        {
+          "name": "getRecentFiles",
+          "kind": "function",
+          "line": 53
+        },
+        {
+          "name": "getRecencyScore",
+          "kind": "function",
+          "line": 79
+        }
+      ],
+      "imports": [
+        "node:child_process",
+        "node:util",
+        "node:path"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/proximity.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1486,
+      "symbols": [
+        {
+          "name": "getDirectoryProximityScore",
+          "kind": "function",
+          "line": 3
+        },
+        {
+          "name": "getSamePackageScore",
+          "kind": "function",
+          "line": 34
+        }
+      ],
+      "imports": [
+        "node:path"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/test-pairing.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 2347,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./test-pairing.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/language.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 969,
+      "symbols": [
+        {
+          "name": "languageFromPath",
+          "kind": "function",
+          "line": 31
+        },
+        {
+          "name": "isLikelyTextFile",
+          "kind": "function",
+          "line": 35
+        }
+      ],
+      "imports": [
+        "node:path"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/test-pairing.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 2296,
+      "symbols": [
+        {
+          "name": "isTestFile",
+          "kind": "function",
+          "line": 13
+        },
+        {
+          "name": "isSourceFile",
+          "kind": "function",
+          "line": 17
+        },
+        {
+          "name": "findTestPair",
+          "kind": "function",
+          "line": 21
+        },
+        {
+          "name": "getTestPairScore",
+          "kind": "function",
+          "line": 61
+        }
+      ],
+      "imports": [
+        "node:path"
+      ]
+    },
+    {
+      "path": "packages/shared/src/command-validation.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 172,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/shared/src/env.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 460,
+      "symbols": [
+        {
+          "name": "loadEnv",
+          "kind": "function",
+          "line": 6
+        }
+      ],
+      "imports": [
+        "dotenv",
+        "node:fs",
+        "node:path",
+        "node:url"
+      ]
+    },
+    {
+      "path": "packages/shared/src/errors.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 353,
+      "symbols": [
+        {
+          "name": "RepoLensError",
+          "kind": "class",
+          "line": 1
+        },
+        {
+          "name": "errorMessage",
+          "kind": "function",
+          "line": 12
+        }
+      ],
+      "imports": []
+    },
+    {
+      "path": "packages/shared/src/index.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 244,
+      "symbols": [],
+      "imports": [
+        "./command-validation.js",
+        "./config.js",
+        "./env.js",
+        "./errors.js",
+        "./json.js",
+        "./logger.js",
+        "./token-budget.js",
+        "./types.js"
+      ]
+    },
+    {
+      "path": "packages/shared/src/logger.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1037,
+      "symbols": [
+        {
+          "name": "createLogger",
+          "kind": "function",
+          "line": 5
+        }
+      ],
+      "imports": [
+        "./config.js"
+      ]
+    },
+    {
+      "path": "packages/shared/src/json.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 556,
+      "symbols": [
+        {
+          "name": "JsonParseError",
+          "kind": "class",
+          "line": 1
+        },
+        {
+          "name": "safeJsonParse",
+          "kind": "function",
+          "line": 8
+        },
+        {
+          "name": "jsonParse",
+          "kind": "function",
+          "line": 16
+        }
+      ],
+      "imports": []
+    },
+    {
+      "path": "packages/shared/src/token-budget.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 4449,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./token-budget.js"
+      ]
+    },
+    {
+      "path": "packages/shared/src/token-budget.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 2906,
+      "symbols": [
+        {
+          "name": "ChatMessage",
+          "kind": "interface",
+          "line": 1
+        },
+        {
+          "name": "estimateMessageBytes",
+          "kind": "function",
+          "line": 10
+        },
+        {
+          "name": "estimateTotalBytes",
+          "kind": "function",
+          "line": 14
+        },
+        {
+          "name": "compressMessage",
+          "kind": "function",
+          "line": 18
+        },
+        {
+          "name": "compactMessages",
+          "kind": "function",
+          "line": 29
+        },
+        {
+          "name": "TrimOptions",
+          "kind": "interface",
+          "line": 41
+        },
+        {
+          "name": "trimToBudget",
+          "kind": "function",
+          "line": 47
+        }
+      ],
+      "imports": []
+    },
+    {
+      "path": "apps/cli/ARCHITECTURE.md",
+      "language": "markdown",
+      "content": "",
+      "size": 730,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "apps/cli/DIFF.md",
+      "language": "markdown",
+      "content": "",
+      "size": 163,
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "path": "packages/context-engine/src/diff-analyzer.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 7083,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./diff-analyzer.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/diff-analyzer.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 11982,
+      "symbols": [
+        {
+          "name": "FileDiff",
+          "kind": "interface",
+          "line": 7
+        },
+        {
+          "name": "DiffResult",
+          "kind": "interface",
+          "line": 17
+        },
+        {
+          "name": "computeUnifiedDiff",
+          "kind": "function",
+          "line": 30
+        },
+        {
+          "name": "shouldDelete",
+          "kind": "function",
+          "line": 119
+        },
+        {
+          "name": "computeSymbolDiff",
+          "kind": "function",
+          "line": 126
+        },
+        {
+          "name": "computeImportDiff",
+          "kind": "function",
+          "line": 136
+        },
+        {
+          "name": "readFileContent",
+          "kind": "function",
+          "line": 146
+        },
+        {
+          "name": "analyzeDiff",
+          "kind": "function",
+          "line": 154
+        },
+        {
+          "name": "formatDiffReport",
+          "kind": "function",
+          "line": 258
+        }
+      ],
+      "imports": [
+        "node:fs/promises",
+        "node:path",
+        "@repolens/shared",
+        "./symbol-extractor.js",
+        "./language.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/integration.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 7853,
+      "symbols": [
+        {
+          "name": "writeTestProject",
+          "kind": "function",
+          "line": 17
+        }
+      ],
+      "imports": [
+        "vitest",
+        "node:fs/promises",
+        "node:path",
+        "node:os",
+        "@repolens/context-engine"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/json-output.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 6371,
+      "symbols": [
+        {
+          "name": "makeContext",
+          "kind": "function",
+          "line": 5
+        }
+      ],
+      "imports": [
+        "vitest",
+        "./json-output.js",
+        "@repolens/shared"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/progress.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 2776,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./progress.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/json-output.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 5580,
+      "symbols": [
+        {
+          "name": "JsonFileEntry",
+          "kind": "interface",
+          "line": 4
+        },
+        {
+          "name": "JsonImportGraphNode",
+          "kind": "interface",
+          "line": 13
+        },
+        {
+          "name": "JsonSummary",
+          "kind": "interface",
+          "line": 20
+        },
+        {
+          "name": "JsonArchitectureReport",
+          "kind": "interface",
+          "line": 31
+        },
+        {
+          "name": "getPackageName",
+          "kind": "function",
+          "line": 56
+        },
+        {
+          "name": "getEntryPoints",
+          "kind": "function",
+          "line": 65
+        },
+        {
+          "name": "generateJsonReport",
+          "kind": "function",
+          "line": 72
+        }
+      ],
+      "imports": [
+        "@repolens/shared",
+        "./import-graph.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/progress.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1440,
+      "symbols": [
+        {
+          "name": "ScanProgress",
+          "kind": "interface",
+          "line": 1
+        },
+        {
+          "name": "ProgressCallback",
+          "kind": "type",
+          "line": 10
+        },
+        {
+          "name": "createProgressCallback",
+          "kind": "function",
+          "line": 12
+        },
+        {
+          "name": "formatProgress",
+          "kind": "function",
+          "line": 17
+        },
+        {
+          "name": "formatBytes",
+          "kind": "function",
+          "line": 42
+        }
+      ],
+      "imports": []
+    },
+    {
+      "path": "packages/context-engine/src/symbol-crossref.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 4749,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./symbol-crossref.js",
+        "@repolens/shared"
+      ]
+    },
+    {
+      "path": "packages/shared/src/config.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 5749,
+      "symbols": [
+        {
+          "name": "makeEnvConfig",
+          "kind": "function",
+          "line": 4
+        }
+      ],
+      "imports": [
+        "vitest",
+        "./config.js"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/symbol-crossref.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 3915,
+      "symbols": [
+        {
+          "name": "SymbolReference",
+          "kind": "interface",
+          "line": 3
+        },
+        {
+          "name": "SymbolCrossReference",
+          "kind": "interface",
+          "line": 11
+        },
+        {
+          "name": "buildSymbolCrossReference",
+          "kind": "function",
+          "line": 16
+        },
+        {
+          "name": "getTopReferencedSymbols",
+          "kind": "function",
+          "line": 95
+        },
+        {
+          "name": "getSymbolDependencies",
+          "kind": "function",
+          "line": 111
+        }
+      ],
+      "imports": [
+        "@repolens/shared"
+      ]
+    },
+    {
+      "path": "packages/context-engine/src/report-generator.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 7715,
+      "symbols": [
+        {
+          "name": "ArchitectureSection",
+          "kind": "interface",
+          "line": 5
+        },
+        {
+          "name": "ReportOptions",
+          "kind": "interface",
+          "line": 10
+        },
+        {
+          "name": "getPackageName",
+          "kind": "function",
+          "line": 16
+        }
+      ],
+      "imports": [
+        "node:path",
+        "@repolens/shared",
+        "./import-graph.js"
+      ]
+    }
+  ],
+  "importGraph": {
+    "nodes": [
+      {
+        "path": "apps/cli/package.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "package.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "apps/cli/tsconfig.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/tsconfig.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/package.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/package.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/tsconfig.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/tsconfig.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/package.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "tsconfig.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "README.md",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "apps/web/public/index.html",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/doc-generator.ts",
+        "imports": [
+          "@repolens/shared",
+          "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/index.ts",
+        "imports": [
+          "./local-provider.js",
+          "./provider-factory.js",
+          "./remote-provider.js",
+          "./types.js",
+          "./summarize.js",
+          "./doc-generator.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/local-provider.ts",
+        "imports": [
+          "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/provider-factory.ts",
+        "imports": [
+          "@repolens/shared",
+          "./local-provider.js",
+          "./remote-provider.js",
+          "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/remote-provider.test.ts",
+        "imports": [
+          "vitest",
+          "./remote-provider.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/remote-provider.ts",
+        "imports": [
+          "@repolens/shared",
+          "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/summarize.ts",
+        "imports": [
+          "@repolens/shared",
+          "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/ai/src/types.ts",
+        "imports": [
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/cache.test.ts",
+        "imports": [
+          "vitest",
+          "./cache.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/cache.ts",
+        "imports": [
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/chunker.ts",
+        "imports": [
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/git-recent.ts",
+        "imports": [
+          "node:child_process",
+          "node:util",
+          "node:path"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/proximity.ts",
+        "imports": [
+          "node:path"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/test-pairing.test.ts",
+        "imports": [
+          "vitest",
+          "./test-pairing.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/language.ts",
+        "imports": [
+          "node:path"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/test-pairing.ts",
+        "imports": [
+          "node:path"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/command-validation.ts",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/env.ts",
+        "imports": [
+          "dotenv",
+          "node:fs",
+          "node:path",
+          "node:url"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/errors.ts",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/index.ts",
+        "imports": [
+          "./command-validation.js",
+          "./config.js",
+          "./env.js",
+          "./errors.js",
+          "./json.js",
+          "./logger.js",
+          "./token-budget.js",
+          "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/logger.ts",
+        "imports": [
+          "./config.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/json.ts",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/token-budget.test.ts",
+        "imports": [
+          "vitest",
+          "./token-budget.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/token-budget.ts",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "apps/cli/ARCHITECTURE.md",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "apps/cli/DIFF.md",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/diff-analyzer.test.ts",
+        "imports": [
+          "vitest",
+          "./diff-analyzer.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/diff-analyzer.ts",
+        "imports": [
+          "node:fs/promises",
+          "node:path",
+          "@repolens/shared",
+          "./symbol-extractor.js",
+          "./language.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/integration.test.ts",
+        "imports": [
+          "vitest",
+          "node:fs/promises",
+          "node:path",
+          "node:os",
+          "@repolens/context-engine"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/json-output.test.ts",
+        "imports": [
+          "vitest",
+          "./json-output.js",
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/progress.test.ts",
+        "imports": [
+          "vitest",
+          "./progress.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/json-output.ts",
+        "imports": [
+          "@repolens/shared",
+          "./import-graph.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/progress.ts",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/symbol-crossref.test.ts",
+        "imports": [
+          "vitest",
+          "./symbol-crossref.js",
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/shared/src/config.test.ts",
+        "imports": [
+          "vitest",
+          "./config.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/symbol-crossref.ts",
+        "imports": [
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/report-generator.ts",
+        "imports": [
+          "node:path",
+          "@repolens/shared",
+          "./import-graph.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      }
+    ],
+    "packages": [
+      {
+        "name": "@repolens/cli",
+        "location": "/home/deepankarthik/projects/repolens/apps/cli",
+        "dependencies": [
+          "@repolens/shared",
+          "@repolens/context-engine",
+          "@repolens/ai",
+          "commander"
+        ]
+      },
+      {
+        "name": "repolens",
+        "location": "/home/deepankarthik/projects/repolens",
+        "dependencies": [
+          "@types/node",
+          "tsx",
+          "typescript",
+          "vitest"
+        ]
+      },
+      {
+        "name": "@repolens/ai",
+        "location": "/home/deepankarthik/projects/repolens/packages/ai",
+        "dependencies": [
+          "@repolens/shared"
+        ]
+      },
+      {
+        "name": "@repolens/context-engine",
+        "location": "/home/deepankarthik/projects/repolens/packages/context-engine",
+        "dependencies": [
+          "@repolens/shared",
+          "typescript"
+        ]
+      },
+      {
+        "name": "@repolens/shared",
+        "location": "/home/deepankarthik/projects/repolens/packages/shared",
+        "dependencies": [
+          "dotenv"
+        ]
+      }
+    ],
+    "externalDeps": [
+      "vitest",
+      "node:child_process",
+      "node:util",
+      "node:path",
+      "dotenv",
+      "node:fs",
+      "node:url",
+      "node:os"
+    ]
+  },
+  "entryPoints": [
+    "packages/ai/src/index.ts",
+    "packages/shared/src/index.ts"
+  ],
+  "modules": [
+    {
+      "name": "cli",
+      "files": [
+        "apps/cli/package.json",
+        "apps/cli/tsconfig.json",
+        "apps/cli/ARCHITECTURE.md",
+        "apps/cli/DIFF.md"
+      ],
+      "symbolCount": 0,
+      "importedByCount": 0
+    },
+    {
+      "name": "root",
+      "files": [
+        "package.json",
+        "tsconfig.json",
+        "README.md"
+      ],
+      "symbolCount": 0,
+      "importedByCount": 0
+    },
+    {
+      "name": "ai",
+      "files": [
+        "packages/ai/tsconfig.json",
+        "packages/ai/package.json",
+        "packages/ai/src/doc-generator.ts",
+        "packages/ai/src/index.ts",
+        "packages/ai/src/local-provider.ts",
+        "packages/ai/src/provider-factory.ts",
+        "packages/ai/src/remote-provider.test.ts",
+        "packages/ai/src/remote-provider.ts",
+        "packages/ai/src/summarize.ts",
+        "packages/ai/src/types.ts"
+      ],
+      "symbolCount": 23,
+      "importedByCount": 0
+    },
+    {
+      "name": "context-engine",
+      "files": [
+        "packages/context-engine/package.json",
+        "packages/context-engine/tsconfig.json",
+        "packages/context-engine/src/cache.test.ts",
+        "packages/context-engine/src/cache.ts",
+        "packages/context-engine/src/chunker.ts",
+        "packages/context-engine/src/git-recent.ts",
+        "packages/context-engine/src/proximity.ts",
+        "packages/context-engine/src/test-pairing.test.ts",
+        "packages/context-engine/src/language.ts",
+        "packages/context-engine/src/test-pairing.ts",
+        "packages/context-engine/src/diff-analyzer.test.ts",
+        "packages/context-engine/src/diff-analyzer.ts",
+        "packages/context-engine/src/integration.test.ts",
+        "packages/context-engine/src/json-output.test.ts",
+        "packages/context-engine/src/progress.test.ts",
+        "packages/context-engine/src/json-output.ts",
+        "packages/context-engine/src/progress.ts",
+        "packages/context-engine/src/symbol-crossref.test.ts",
+        "packages/context-engine/src/symbol-crossref.ts",
+        "packages/context-engine/src/report-generator.ts"
+      ],
+      "symbolCount": 57,
+      "importedByCount": 0
+    },
+    {
+      "name": "shared",
+      "files": [
+        "packages/shared/tsconfig.json",
+        "packages/shared/package.json",
+        "packages/shared/src/command-validation.ts",
+        "packages/shared/src/env.ts",
+        "packages/shared/src/errors.ts",
+        "packages/shared/src/index.ts",
+        "packages/shared/src/logger.ts",
+        "packages/shared/src/json.ts",
+        "packages/shared/src/token-budget.test.ts",
+        "packages/shared/src/token-budget.ts",
+        "packages/shared/src/config.test.ts"
+      ],
+      "symbolCount": 15,
+      "importedByCount": 0
+    },
+    {
+      "name": "web",
+      "files": [
+        "apps/web/public/index.html"
+      ],
+      "symbolCount": 0,
+      "importedByCount": 0
+    }
+  ],
+  "keySymbols": [
+    {
+      "kind": "function",
+      "name": "callProvider",
+      "file": "packages/ai/src/doc-generator.ts",
+      "line": 35,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "formatContext",
+      "file": "packages/ai/src/doc-generator.ts",
+      "line": 46,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "generateArchitectureSummary",
+      "file": "packages/ai/src/doc-generator.ts",
+      "line": 56,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "generateTraceExplanation",
+      "file": "packages/ai/src/doc-generator.ts",
+      "line": 69,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "generateDiffAnalysis",
+      "file": "packages/ai/src/doc-generator.ts",
+      "line": 83,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "simulateStreaming",
+      "file": "packages/ai/src/local-provider.ts",
+      "line": 3,
+      "importedBy": 0
+    },
+    {
+      "kind": "class",
+      "name": "LocalAIProvider",
+      "file": "packages/ai/src/local-provider.ts",
+      "line": 21,
+      "importedBy": 0
+    },
+    {
+      "kind": "method",
+      "name": "name",
+      "file": "packages/ai/src/local-provider.ts",
+      "line": 22,
+      "importedBy": 0
+    },
+    {
+      "kind": "method",
+      "name": "streamChat",
+      "file": "packages/ai/src/local-provider.ts",
+      "line": 24,
+      "importedBy": 0
+    },
+    {
+      "kind": "method",
+      "name": "chat",
+      "file": "packages/ai/src/local-provider.ts",
+      "line": 39,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "createAIProvider",
+      "file": "packages/ai/src/provider-factory.ts",
+      "line": 6,
+      "importedBy": 0
+    },
+    {
+      "kind": "interface",
+      "name": "RemoteProviderOptions",
+      "file": "packages/ai/src/remote-provider.ts",
+      "line": 4,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "validateBaseUrl",
+      "file": "packages/ai/src/remote-provider.ts",
+      "line": 23,
+      "importedBy": 0
+    },
+    {
+      "kind": "interface",
+      "name": "StreamDelta",
+      "file": "packages/ai/src/remote-provider.ts",
+      "line": 42,
+      "importedBy": 0
+    },
+    {
+      "kind": "interface",
+      "name": "StreamChoice",
+      "file": "packages/ai/src/remote-provider.ts",
+      "line": 46,
+      "importedBy": 0
+    }
+  ]
+}
