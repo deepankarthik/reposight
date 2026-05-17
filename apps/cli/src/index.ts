@@ -18,7 +18,7 @@ const fs = { readFile: fsReadFile };
 const log = createLogger("repolens-cli");
 const execFileAsync = promisify(execFile);
 
-async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[] }): Promise<void> {
+async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }): Promise<void> {
   const envConfig = readConfigFromEnv();
   const fileConfig = await loadConfigFile(dir);
   const config = mergeConfig(fileConfig, envConfig);
@@ -38,6 +38,7 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     targetFile: options.targetFile ? path.resolve(dir, options.targetFile) : undefined,
     include: options.include,
     exclude: options.exclude,
+    summarize: options.summarize,
     onProgress: (progress) => {
       process.stderr.write(`\r${formatProgress(progress)}`);
     }
@@ -190,9 +191,10 @@ program
   .option("-f, --format <format>", "Output format: markdown (default) or json")
   .option("--include <patterns...>", "Only include files matching these glob patterns")
   .option("--exclude <patterns...>", "Exclude files matching these glob patterns")
-  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[] }) => {
+  .option("--summarize", "Generate AI-powered file summaries (requires API key)")
+  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }) => {
     try {
-      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude });
+      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude, summarize: options.summarize });
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;

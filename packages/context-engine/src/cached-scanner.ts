@@ -11,6 +11,7 @@ import { getRecentFiles, getRecencyScore, type RecentFileEntry, GIT_NOT_AVAILABL
 import { getTestPairScore, isTestFile, isSourceFile } from "./test-pairing.js";
 import { getDirectoryProximityScore, getSamePackageScore } from "./proximity.js";
 import type { ProgressCallback } from "./progress.js";
+import { generateHeuristicSummary } from "./summary.js";
 
 interface ScanRepositoryOptions {
   rootDir: string;
@@ -24,6 +25,7 @@ interface ScanRepositoryOptions {
   include?: string[];
   exclude?: string[];
   onProgress?: ProgressCallback;
+  summarize?: boolean;
 }
 
 function toSafeRelativePath(rootDir: string, filePath: string): string | undefined {
@@ -203,6 +205,7 @@ async function readFilesWithinBudget(
           }
 
           const imports = extractImportsFromSource(cached.content, languageFromPath(file.relativePath));
+          const summary = generateHeuristicSummary(file.relativePath, cached.symbols, imports);
 
           files.push({
             path: file.relativePath,
@@ -211,7 +214,8 @@ async function readFilesWithinBudget(
             content: cached.content,
             size: stat.size,
             symbols: cached.symbols,
-            imports
+            imports,
+            summary
           });
 
           totalBytes += contentBytes;
@@ -228,6 +232,7 @@ async function readFilesWithinBudget(
         const language = languageFromPath(file.relativePath);
         const symbols = extractSymbols(content, language);
         const imports = extractImportsFromSource(content, language);
+        const summary = generateHeuristicSummary(file.relativePath, symbols, imports);
 
         const contentBytes = Buffer.byteLength(content, "utf8");
         if (contentBytes === 0 || files.length >= maxFiles) {
@@ -244,7 +249,8 @@ async function readFilesWithinBudget(
           content,
           size: stat.size,
           symbols,
-          imports
+          imports,
+          summary
         });
 
         totalBytes += contentBytes;

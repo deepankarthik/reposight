@@ -16,6 +16,7 @@ export interface ContextFile {
   endLine?: number;
   symbols?: CodeSymbol[];
   imports?: string[];
+  summary?: string;
 }
 
 export interface ContextChunk extends ContextFile {

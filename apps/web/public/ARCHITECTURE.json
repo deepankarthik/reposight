@@ -2,7 +2,7 @@
   "version": "0.1.0",
   "summary": {
     "rootDir": "/home/deepankarthik/projects/repolens",
-    "scannedFiles": 66,
+    "scannedFiles": 68,
     "includedFiles": 49,
     "totalBytes": 120000,
     "truncated": true,
@@ -17,15 +17,8 @@
       "content": "",
       "size": 645,
       "symbols": [],
-      "imports": []
-    },
-    {
-      "path": "package.json",
-      "language": "json",
-      "content": "",
-      "size": 583,
-      "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "JSON configuration or data file."
     },
     {
       "path": "apps/cli/tsconfig.json",
@@ -33,15 +26,17 @@
       "content": "",
       "size": 281,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "Configuration definitions."
     },
     {
-      "path": "packages/ai/tsconfig.json",
+      "path": "package.json",
       "language": "json",
       "content": "",
-      "size": 206,
+      "size": 583,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "JSON configuration or data file."
     },
     {
       "path": "packages/ai/package.json",
@@ -49,7 +44,8 @@
       "content": "",
       "size": 453,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "JSON configuration or data file."
     },
     {
       "path": "packages/context-engine/package.json",
@@ -57,7 +53,17 @@
       "content": "",
       "size": 493,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "JSON configuration or data file."
+    },
+    {
+      "path": "packages/ai/tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 206,
+      "symbols": [],
+      "imports": [],
+      "summary": "Configuration definitions."
     },
     {
       "path": "packages/context-engine/tsconfig.json",
@@ -65,15 +71,8 @@
       "content": "",
       "size": 206,
       "symbols": [],
-      "imports": []
-    },
-    {
-      "path": "packages/shared/tsconfig.json",
-      "language": "json",
-      "content": "",
-      "size": 155,
-      "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "Configuration definitions."
     },
     {
       "path": "packages/shared/package.json",
@@ -81,7 +80,17 @@
       "content": "",
       "size": 443,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "JSON configuration or data file."
+    },
+    {
+      "path": "packages/shared/tsconfig.json",
+      "language": "json",
+      "content": "",
+      "size": 155,
+      "symbols": [],
+      "imports": [],
+      "summary": "Configuration definitions."
     },
     {
       "path": "tsconfig.json",
@@ -89,7 +98,8 @@
       "content": "",
       "size": 536,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "Configuration definitions."
     },
     {
       "path": "README.md",
@@ -97,15 +107,8 @@
       "content": "",
       "size": 6370,
       "symbols": [],
-      "imports": []
-    },
-    {
-      "path": "apps/web/public/index.html",
-      "language": "html",
-      "content": "",
-      "size": 10900,
-      "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "Documentation file."
     },
     {
       "path": "packages/ai/src/doc-generator.ts",
@@ -142,7 +145,25 @@
       "imports": [
         "@repolens/shared",
         "./types.js"
-      ]
+      ],
+      "summary": "Exports functions: callProvider, formatContext, generateArchitectureSummary. Depends on external packages: @repolens/shared. Imports from 1 internal module."
+    },
+    {
+      "path": "packages/context-engine/src/summary.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 3516,
+      "symbols": [
+        {
+          "name": "generateHeuristicSummary",
+          "kind": "function",
+          "line": 3
+        }
+      ],
+      "imports": [
+        "@repolens/shared"
+      ],
+      "summary": "Exports function: generateHeuristicSummary. Depends on external packages: @repolens/shared."
     },
     {
       "path": "packages/ai/src/index.ts",
@@ -157,7 +178,8 @@
         "./types.js",
         "./summarize.js",
         "./doc-generator.js"
-      ]
+      ],
+      "summary": "Entry point for the src module. Imports from 6 internal modules."
     },
     {
       "path": "packages/ai/src/local-provider.ts",
@@ -193,7 +215,20 @@
       ],
       "imports": [
         "./types.js"
-      ]
+      ],
+      "summary": "Defines class: LocalAIProvider. Exports function: simulateStreaming. Imports from 1 internal module."
+    },
+    {
+      "path": "packages/ai/src/remote-provider.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1617,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./remote-provider.js"
+      ],
+      "summary": "Test file for remote-provider. Depends on external packages: vitest. Imports from 1 internal module."
     },
     {
       "path": "packages/ai/src/provider-factory.ts",
@@ -212,18 +247,8 @@
         "./local-provider.js",
         "./remote-provider.js",
         "./types.js"
-      ]
-    },
-    {
-      "path": "packages/ai/src/remote-provider.test.ts",
-      "language": "typescript",
-      "content": "",
-      "size": 1617,
-      "symbols": [],
-      "imports": [
-        "vitest",
-        "./remote-provider.js"
-      ]
+      ],
+      "summary": "Exports function: createAIProvider. Depends on external packages: @repolens/shared. Imports from 3 internal modules."
     },
     {
       "path": "packages/ai/src/remote-provider.ts",
@@ -280,7 +305,8 @@
       "imports": [
         "@repolens/shared",
         "./types.js"
-      ]
+      ],
+      "summary": "Defines class: RemoteAIProvider. Defines interfaces: RemoteProviderOptions, StreamDelta, StreamChoice. Exports function: validateBaseUrl. Depends on external packages: @repolens/shared. Imports from 1 internal module."
     },
     {
       "path": "packages/ai/src/summarize.ts",
@@ -297,7 +323,8 @@
       "imports": [
         "@repolens/shared",
         "./types.js"
-      ]
+      ],
+      "summary": "Exports function: createSummarizeFn. Depends on external packages: @repolens/shared. Imports from 1 internal module."
     },
     {
       "path": "packages/ai/src/types.ts",
@@ -318,7 +345,8 @@
       ],
       "imports": [
         "@repolens/shared"
-      ]
+      ],
+      "summary": "Type definitions and interfaces. Defines interfaces: AIStreamRequest, AIProvider. Depends on external packages: @repolens/shared."
     },
     {
       "path": "packages/context-engine/src/cache.test.ts",
@@ -329,7 +357,8 @@
       "imports": [
         "vitest",
         "./cache.js"
-      ]
+      ],
+      "summary": "Test file for cache. Depends on external packages: vitest. Imports from 1 internal module."
     },
     {
       "path": "packages/context-engine/src/cache.ts",
@@ -400,7 +429,8 @@
       ],
       "imports": [
         "@repolens/shared"
-      ]
+      ],
+      "summary": "Defines class: FileCache. Defines interface: CacheEntry. Depends on external packages: @repolens/shared."
     },
     {
       "path": "packages/context-engine/src/chunker.ts",
@@ -416,7 +446,8 @@
       ],
       "imports": [
         "@repolens/shared"
-      ]
+      ],
+      "summary": "Exports function: chunkFile. Depends on external packages: @repolens/shared."
     },
     {
       "path": "packages/context-engine/src/git-recent.ts",
@@ -454,7 +485,8 @@
         "node:child_process",
         "node:util",
         "node:path"
-      ]
+      ],
+      "summary": "Defines interface: RecentFileEntry. Exports functions: isGitRepo, getGitLog, getRecentFiles. Depends on external packages: node:child_process, node:util, node:path."
     },
     {
       "path": "packages/context-engine/src/proximity.ts",
@@ -475,7 +507,8 @@
       ],
       "imports": [
         "node:path"
-      ]
+      ],
+      "summary": "Exports functions: getDirectoryProximityScore, getSamePackageScore. Depends on external packages: node:path."
     },
     {
       "path": "packages/context-engine/src/test-pairing.test.ts",
@@ -486,28 +519,8 @@
       "imports": [
         "vitest",
         "./test-pairing.js"
-      ]
-    },
-    {
-      "path": "packages/context-engine/src/language.ts",
-      "language": "typescript",
-      "content": "",
-      "size": 969,
-      "symbols": [
-        {
-          "name": "languageFromPath",
-          "kind": "function",
-          "line": 31
-        },
-        {
-          "name": "isLikelyTextFile",
-          "kind": "function",
-          "line": 35
-        }
       ],
-      "imports": [
-        "node:path"
-      ]
+      "summary": "Test file for test-pairing. Depends on external packages: vitest. Imports from 1 internal module."
     },
     {
       "path": "packages/context-engine/src/test-pairing.ts",
@@ -538,7 +551,8 @@
       ],
       "imports": [
         "node:path"
-      ]
+      ],
+      "summary": "Test file for test-pairing.ts. Exports functions: isTestFile, isSourceFile, findTestPair. Depends on external packages: node:path."
     },
     {
       "path": "packages/shared/src/command-validation.ts",
@@ -546,7 +560,30 @@
       "content": "",
       "size": 172,
       "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "Source file in src directory."
+    },
+    {
+      "path": "packages/context-engine/src/language.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 969,
+      "symbols": [
+        {
+          "name": "languageFromPath",
+          "kind": "function",
+          "line": 31
+        },
+        {
+          "name": "isLikelyTextFile",
+          "kind": "function",
+          "line": 35
+        }
+      ],
+      "imports": [
+        "node:path"
+      ],
+      "summary": "Exports functions: languageFromPath, isLikelyTextFile. Depends on external packages: node:path."
     },
     {
       "path": "packages/shared/src/env.ts",
@@ -565,7 +602,8 @@
         "node:fs",
         "node:path",
         "node:url"
-      ]
+      ],
+      "summary": "Exports function: loadEnv. Depends on external packages: dotenv, node:fs, node:path."
     },
     {
       "path": "packages/shared/src/errors.ts",
@@ -584,40 +622,8 @@
           "line": 12
         }
       ],
-      "imports": []
-    },
-    {
-      "path": "packages/shared/src/index.ts",
-      "language": "typescript",
-      "content": "",
-      "size": 244,
-      "symbols": [],
-      "imports": [
-        "./command-validation.js",
-        "./config.js",
-        "./env.js",
-        "./errors.js",
-        "./json.js",
-        "./logger.js",
-        "./token-budget.js",
-        "./types.js"
-      ]
-    },
-    {
-      "path": "packages/shared/src/logger.ts",
-      "language": "typescript",
-      "content": "",
-      "size": 1037,
-      "symbols": [
-        {
-          "name": "createLogger",
-          "kind": "function",
-          "line": 5
-        }
-      ],
-      "imports": [
-        "./config.js"
-      ]
+      "imports": [],
+      "summary": "Defines class: RepoLensError. Exports function: errorMessage."
     },
     {
       "path": "packages/shared/src/json.ts",
@@ -641,7 +647,26 @@
           "line": 16
         }
       ],
-      "imports": []
+      "imports": [],
+      "summary": "Defines class: JsonParseError. Exports functions: safeJsonParse, jsonParse."
+    },
+    {
+      "path": "packages/shared/src/index.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 244,
+      "symbols": [],
+      "imports": [
+        "./command-validation.js",
+        "./config.js",
+        "./env.js",
+        "./errors.js",
+        "./json.js",
+        "./logger.js",
+        "./token-budget.js",
+        "./types.js"
+      ],
+      "summary": "Entry point for the src module. Imports from 8 internal modules."
     },
     {
       "path": "packages/shared/src/token-budget.test.ts",
@@ -652,7 +677,25 @@
       "imports": [
         "vitest",
         "./token-budget.js"
-      ]
+      ],
+      "summary": "Test file for token-budget. Depends on external packages: vitest. Imports from 1 internal module."
+    },
+    {
+      "path": "packages/shared/src/logger.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 1037,
+      "symbols": [
+        {
+          "name": "createLogger",
+          "kind": "function",
+          "line": 5
+        }
+      ],
+      "imports": [
+        "./config.js"
+      ],
+      "summary": "Exports function: createLogger. Imports from 1 internal module."
     },
     {
       "path": "packages/shared/src/token-budget.ts",
@@ -696,7 +739,8 @@
           "line": 47
         }
       ],
-      "imports": []
+      "imports": [],
+      "summary": "Defines interfaces: ChatMessage, TrimOptions. Exports functions: estimateMessageBytes, estimateTotalBytes, compressMessage."
     },
     {
       "path": "apps/cli/ARCHITECTURE.md",
@@ -704,15 +748,8 @@
       "content": "",
       "size": 730,
       "symbols": [],
-      "imports": []
-    },
-    {
-      "path": "apps/cli/DIFF.md",
-      "language": "markdown",
-      "content": "",
-      "size": 163,
-      "symbols": [],
-      "imports": []
+      "imports": [],
+      "summary": "Documentation file."
     },
     {
       "path": "packages/context-engine/src/diff-analyzer.test.ts",
@@ -723,7 +760,17 @@
       "imports": [
         "vitest",
         "./diff-analyzer.js"
-      ]
+      ],
+      "summary": "Test file for diff-analyzer. Depends on external packages: vitest. Imports from 1 internal module."
+    },
+    {
+      "path": "apps/cli/DIFF.md",
+      "language": "markdown",
+      "content": "",
+      "size": 163,
+      "symbols": [],
+      "imports": [],
+      "summary": "Documentation file."
     },
     {
       "path": "packages/context-engine/src/diff-analyzer.ts",
@@ -783,7 +830,8 @@
         "@repolens/shared",
         "./symbol-extractor.js",
         "./language.js"
-      ]
+      ],
+      "summary": "Defines interfaces: FileDiff, DiffResult. Exports functions: computeUnifiedDiff, shouldDelete, computeSymbolDiff. Depends on external packages: node:fs/promises, node:path, @repolens/shared. Imports from 2 internal modules."
     },
     {
       "path": "packages/context-engine/src/integration.test.ts",
@@ -803,7 +851,8 @@
         "node:path",
         "node:os",
         "@repolens/context-engine"
-      ]
+      ],
+      "summary": "Test file for integration. Exports function: writeTestProject. Depends on external packages: vitest, node:fs/promises, node:path."
     },
     {
       "path": "packages/context-engine/src/json-output.test.ts",
@@ -821,7 +870,8 @@
         "vitest",
         "./json-output.js",
         "@repolens/shared"
-      ]
+      ],
+      "summary": "Test file for json-output. Exports function: makeContext. Depends on external packages: vitest, @repolens/shared. Imports from 1 internal module."
     },
     {
       "path": "packages/context-engine/src/progress.test.ts",
@@ -832,13 +882,14 @@
       "imports": [
         "vitest",
         "./progress.js"
-      ]
+      ],
+      "summary": "Test file for progress. Depends on external packages: vitest. Imports from 1 internal module."
     },
     {
       "path": "packages/context-engine/src/json-output.ts",
       "language": "typescript",
       "content": "",
-      "size": 5580,
+      "size": 5629,
       "symbols": [
         {
           "name": "JsonFileEntry",
@@ -848,38 +899,52 @@
         {
           "name": "JsonImportGraphNode",
           "kind": "interface",
-          "line": 13
+          "line": 14
         },
         {
           "name": "JsonSummary",
           "kind": "interface",
-          "line": 20
+          "line": 21
         },
         {
           "name": "JsonArchitectureReport",
           "kind": "interface",
-          "line": 31
+          "line": 32
         },
         {
           "name": "getPackageName",
           "kind": "function",
-          "line": 56
+          "line": 57
         },
         {
           "name": "getEntryPoints",
           "kind": "function",
-          "line": 65
+          "line": 66
         },
         {
           "name": "generateJsonReport",
           "kind": "function",
-          "line": 72
+          "line": 73
         }
       ],
       "imports": [
         "@repolens/shared",
         "./import-graph.js"
-      ]
+      ],
+      "summary": "Defines interfaces: JsonFileEntry, JsonImportGraphNode, JsonSummary. Exports functions: getPackageName, getEntryPoints, generateJsonReport. Depends on external packages: @repolens/shared. Imports from 1 internal module."
+    },
+    {
+      "path": "packages/context-engine/src/symbol-crossref.test.ts",
+      "language": "typescript",
+      "content": "",
+      "size": 4749,
+      "symbols": [],
+      "imports": [
+        "vitest",
+        "./symbol-crossref.js",
+        "@repolens/shared"
+      ],
+      "summary": "Test file for symbol-crossref. Depends on external packages: vitest, @repolens/shared. Imports from 1 internal module."
     },
     {
       "path": "packages/context-engine/src/progress.ts",
@@ -913,36 +978,8 @@
           "line": 42
         }
       ],
-      "imports": []
-    },
-    {
-      "path": "packages/context-engine/src/symbol-crossref.test.ts",
-      "language": "typescript",
-      "content": "",
-      "size": 4749,
-      "symbols": [],
-      "imports": [
-        "vitest",
-        "./symbol-crossref.js",
-        "@repolens/shared"
-      ]
-    },
-    {
-      "path": "packages/shared/src/config.test.ts",
-      "language": "typescript",
-      "content": "",
-      "size": 5749,
-      "symbols": [
-        {
-          "name": "makeEnvConfig",
-          "kind": "function",
-          "line": 4
-        }
-      ],
-      "imports": [
-        "vitest",
-        "./config.js"
-      ]
+      "imports": [],
+      "summary": "Defines interface: ScanProgress. Exports functions: createProgressCallback, formatProgress, formatBytes."
     },
     {
       "path": "packages/context-engine/src/symbol-crossref.ts",
@@ -978,35 +1015,35 @@
       ],
       "imports": [
         "@repolens/shared"
-      ]
+      ],
+      "summary": "Defines interfaces: SymbolReference, SymbolCrossReference. Exports functions: buildSymbolCrossReference, getTopReferencedSymbols, getSymbolDependencies. Depends on external packages: @repolens/shared."
     },
     {
-      "path": "packages/context-engine/src/report-generator.ts",
+      "path": "packages/shared/src/config.test.ts",
       "language": "typescript",
       "content": "",
-      "size": 7715,
+      "size": 5749,
       "symbols": [
         {
-          "name": "ArchitectureSection",
-          "kind": "interface",
-          "line": 5
-        },
-        {
-          "name": "ReportOptions",
-          "kind": "interface",
-          "line": 10
-        },
-        {
-          "name": "getPackageName",
+          "name": "makeEnvConfig",
           "kind": "function",
-          "line": 16
+          "line": 4
         }
       ],
       "imports": [
-        "node:path",
-        "@repolens/shared",
-        "./import-graph.js"
-      ]
+        "vitest",
+        "./config.js"
+      ],
+      "summary": "Test file for config. Exports function: makeEnvConfig. Depends on external packages: vitest. Imports from 1 internal module."
+    },
+    {
+      "path": "apps/web/public/ARCHITECTURE.json",
+      "language": "json",
+      "content": "",
+      "size": 37445,
+      "symbols": [],
+      "imports": [],
+      "summary": "JSON configuration or data file."
     }
   ],
   "importGraph": {
@@ -1018,19 +1055,13 @@
         "importCount": 0
       },
       {
-        "path": "package.json",
-        "imports": [],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
         "path": "apps/cli/tsconfig.json",
         "imports": [],
         "importedBy": [],
         "importCount": 0
       },
       {
-        "path": "packages/ai/tsconfig.json",
+        "path": "package.json",
         "imports": [],
         "importedBy": [],
         "importCount": 0
@@ -1048,19 +1079,25 @@
         "importCount": 0
       },
       {
+        "path": "packages/ai/tsconfig.json",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
         "path": "packages/context-engine/tsconfig.json",
         "imports": [],
         "importedBy": [],
         "importCount": 0
       },
       {
-        "path": "packages/shared/tsconfig.json",
+        "path": "packages/shared/package.json",
         "imports": [],
         "importedBy": [],
         "importCount": 0
       },
       {
-        "path": "packages/shared/package.json",
+        "path": "packages/shared/tsconfig.json",
         "imports": [],
         "importedBy": [],
         "importCount": 0
@@ -1078,16 +1115,18 @@
         "importCount": 0
       },
       {
-        "path": "apps/web/public/index.html",
-        "imports": [],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
         "path": "packages/ai/src/doc-generator.ts",
         "imports": [
           "@repolens/shared",
           "./types.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/summary.ts",
+        "imports": [
+          "@repolens/shared"
         ],
         "importedBy": [],
         "importCount": 0
@@ -1114,21 +1153,21 @@
         "importCount": 0
       },
       {
+        "path": "packages/ai/src/remote-provider.test.ts",
+        "imports": [
+          "vitest",
+          "./remote-provider.js"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
         "path": "packages/ai/src/provider-factory.ts",
         "imports": [
           "@repolens/shared",
           "./local-provider.js",
           "./remote-provider.js",
           "./types.js"
-        ],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
-        "path": "packages/ai/src/remote-provider.test.ts",
-        "imports": [
-          "vitest",
-          "./remote-provider.js"
         ],
         "importedBy": [],
         "importCount": 0
@@ -1212,14 +1251,6 @@
         "importCount": 0
       },
       {
-        "path": "packages/context-engine/src/language.ts",
-        "imports": [
-          "node:path"
-        ],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
         "path": "packages/context-engine/src/test-pairing.ts",
         "imports": [
           "node:path"
@@ -1230,6 +1261,14 @@
       {
         "path": "packages/shared/src/command-validation.ts",
         "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "packages/context-engine/src/language.ts",
+        "imports": [
+          "node:path"
+        ],
         "importedBy": [],
         "importCount": 0
       },
@@ -1251,6 +1290,12 @@
         "importCount": 0
       },
       {
+        "path": "packages/shared/src/json.ts",
+        "imports": [],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
         "path": "packages/shared/src/index.ts",
         "imports": [
           "./command-validation.js",
@@ -1266,24 +1311,18 @@
         "importCount": 0
       },
       {
-        "path": "packages/shared/src/logger.ts",
+        "path": "packages/shared/src/token-budget.test.ts",
         "imports": [
-          "./config.js"
+          "vitest",
+          "./token-budget.js"
         ],
         "importedBy": [],
         "importCount": 0
       },
       {
-        "path": "packages/shared/src/json.ts",
-        "imports": [],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
-        "path": "packages/shared/src/token-budget.test.ts",
+        "path": "packages/shared/src/logger.ts",
         "imports": [
-          "vitest",
-          "./token-budget.js"
+          "./config.js"
         ],
         "importedBy": [],
         "importCount": 0
@@ -1301,17 +1340,17 @@
         "importCount": 0
       },
       {
-        "path": "apps/cli/DIFF.md",
-        "imports": [],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
         "path": "packages/context-engine/src/diff-analyzer.test.ts",
         "imports": [
           "vitest",
           "./diff-analyzer.js"
         ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
+        "path": "apps/cli/DIFF.md",
+        "imports": [],
         "importedBy": [],
         "importCount": 0
       },
@@ -1368,16 +1407,24 @@
         "importCount": 0
       },
       {
+        "path": "packages/context-engine/src/symbol-crossref.test.ts",
+        "imports": [
+          "vitest",
+          "./symbol-crossref.js",
+          "@repolens/shared"
+        ],
+        "importedBy": [],
+        "importCount": 0
+      },
+      {
         "path": "packages/context-engine/src/progress.ts",
         "imports": [],
         "importedBy": [],
         "importCount": 0
       },
       {
-        "path": "packages/context-engine/src/symbol-crossref.test.ts",
+        "path": "packages/context-engine/src/symbol-crossref.ts",
         "imports": [
-          "vitest",
-          "./symbol-crossref.js",
           "@repolens/shared"
         ],
         "importedBy": [],
@@ -1393,20 +1440,8 @@
         "importCount": 0
       },
       {
-        "path": "packages/context-engine/src/symbol-crossref.ts",
-        "imports": [
-          "@repolens/shared"
-        ],
-        "importedBy": [],
-        "importCount": 0
-      },
-      {
-        "path": "packages/context-engine/src/report-generator.ts",
-        "imports": [
-          "node:path",
-          "@repolens/shared",
-          "./import-graph.js"
-        ],
+        "path": "apps/web/public/ARCHITECTURE.json",
+        "imports": [],
         "importedBy": [],
         "importCount": 0
       }
@@ -1495,13 +1530,13 @@
     {
       "name": "ai",
       "files": [
-        "packages/ai/tsconfig.json",
         "packages/ai/package.json",
+        "packages/ai/tsconfig.json",
         "packages/ai/src/doc-generator.ts",
         "packages/ai/src/index.ts",
         "packages/ai/src/local-provider.ts",
-        "packages/ai/src/provider-factory.ts",
         "packages/ai/src/remote-provider.test.ts",
+        "packages/ai/src/provider-factory.ts",
         "packages/ai/src/remote-provider.ts",
         "packages/ai/src/summarize.ts",
         "packages/ai/src/types.ts"
@@ -1514,40 +1549,40 @@
       "files": [
         "packages/context-engine/package.json",
         "packages/context-engine/tsconfig.json",
+        "packages/context-engine/src/summary.ts",
         "packages/context-engine/src/cache.test.ts",
         "packages/context-engine/src/cache.ts",
         "packages/context-engine/src/chunker.ts",
         "packages/context-engine/src/git-recent.ts",
         "packages/context-engine/src/proximity.ts",
         "packages/context-engine/src/test-pairing.test.ts",
-        "packages/context-engine/src/language.ts",
         "packages/context-engine/src/test-pairing.ts",
+        "packages/context-engine/src/language.ts",
         "packages/context-engine/src/diff-analyzer.test.ts",
         "packages/context-engine/src/diff-analyzer.ts",
         "packages/context-engine/src/integration.test.ts",
         "packages/context-engine/src/json-output.test.ts",
         "packages/context-engine/src/progress.test.ts",
         "packages/context-engine/src/json-output.ts",
-        "packages/context-engine/src/progress.ts",
         "packages/context-engine/src/symbol-crossref.test.ts",
-        "packages/context-engine/src/symbol-crossref.ts",
-        "packages/context-engine/src/report-generator.ts"
+        "packages/context-engine/src/progress.ts",
+        "packages/context-engine/src/symbol-crossref.ts"
       ],
-      "symbolCount": 57,
+      "symbolCount": 55,
       "importedByCount": 0
     },
     {
       "name": "shared",
       "files": [
-        "packages/shared/tsconfig.json",
         "packages/shared/package.json",
+        "packages/shared/tsconfig.json",
         "packages/shared/src/command-validation.ts",
         "packages/shared/src/env.ts",
         "packages/shared/src/errors.ts",
-        "packages/shared/src/index.ts",
-        "packages/shared/src/logger.ts",
         "packages/shared/src/json.ts",
+        "packages/shared/src/index.ts",
         "packages/shared/src/token-budget.test.ts",
+        "packages/shared/src/logger.ts",
         "packages/shared/src/token-budget.ts",
         "packages/shared/src/config.test.ts"
       ],
@@ -1557,7 +1592,7 @@
     {
       "name": "web",
       "files": [
-        "apps/web/public/index.html"
+        "apps/web/public/ARCHITECTURE.json"
       ],
       "symbolCount": 0,
       "importedByCount": 0
@@ -1597,6 +1632,13 @@
       "name": "generateDiffAnalysis",
       "file": "packages/ai/src/doc-generator.ts",
       "line": 83,
+      "importedBy": 0
+    },
+    {
+      "kind": "function",
+      "name": "generateHeuristicSummary",
+      "file": "packages/context-engine/src/summary.ts",
+      "line": 3,
       "importedBy": 0
     },
     {
@@ -1660,13 +1702,6 @@
       "name": "StreamDelta",
       "file": "packages/ai/src/remote-provider.ts",
       "line": 42,
-      "importedBy": 0
-    },
-    {
-      "kind": "interface",
-      "name": "StreamChoice",
-      "file": "packages/ai/src/remote-provider.ts",
-      "line": 46,
       "importedBy": 0
     }
   ]
