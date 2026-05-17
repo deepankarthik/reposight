@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { ContextFile, RepositoryContext } from "@repolens/shared";
 import { chunkFile } from "./chunker.js";
-import { shouldIgnorePath } from "./ignore.js";
+import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile } from "./ignore.js";
 import { isLikelyTextFile, languageFromPath } from "./language.js";
 import { extractSymbols, extractImportsFromSource } from "./symbol-extractor.js";
 import { FileCache } from "./cache.js";
@@ -19,6 +19,7 @@ interface ScanRepositoryOptions {
   maxFileBytes?: number;
   maxChunkChars?: number;
   targetFile?: string;
+  ignoreTests?: boolean;
 }
 
 function toSafeRelativePath(rootDir: string, filePath: string): string | undefined {
@@ -115,24 +116,32 @@ async function discoverFiles(rootDir: string, requestedFiles?: string[], skipped
 async function sortAndFilterFiles(
   rootDir: string,
   discoveredFiles: string[],
-  targetFile?: string
+  targetFile?: string,
+  ignoreTests?: boolean
 ): Promise<{ absolutePath: string; relativePath: string; imports: string[]; score: number }[]> {
   const filesWithRelative = discoveredFiles
     .map((absolutePath) => ({ absolutePath, relativePath: path.relative(rootDir, absolutePath).split(path.sep).join("/") }))
-    .filter(({ relativePath }) => !shouldIgnorePath(relativePath) && isLikelyTextFile(relativePath));
+    .filter(({ relativePath }) => {
+      if (shouldIgnorePath(relativePath, { ignoreTests })) return false;
+      if (isGeneratedFile(relativePath)) return false;
+      return isLikelyTextFile(relativePath);
+    });
 
   const allRelativePaths = filesWithRelative.map((f) => f.relativePath);
 
   const filesWithImports: Array<{ absolutePath: string; relativePath: string; imports: string[] }> = [];
-  for (const f of filesWithRelative) {
-    try {
-      const content = await fs.readFile(f.absolutePath, "utf8");
-      const imports = extractImportsFromSource(content, languageFromPath(f.relativePath));
-      filesWithImports.push({ ...f, imports });
-    } catch {
-      filesWithImports.push({ ...f, imports: [] });
-    }
-  }
+  const importResults = await Promise.all(
+    filesWithRelative.map(async (f) => {
+      try {
+        const content = await fs.readFile(f.absolutePath, "utf8");
+        const imports = extractImportsFromSource(content, languageFromPath(f.relativePath));
+        return { ...f, imports };
+      } catch {
+        return { ...f, imports: [] };
+      }
+    })
+  );
+  filesWithImports.push(...importResults);
 
   const importGraph = buildImportGraph(filesWithImports);
   const recentFiles = await getRecentFiles(rootDir);
@@ -158,74 +167,107 @@ async function readFilesWithinBudget(
   let cacheHits = 0;
   let cacheMisses = 0;
 
-  for (const file of sortedFiles) {
+  const concurrencyLimit = 10;
+  const batches: { absolutePath: string; relativePath: string }[][] = [];
+  for (let i = 0; i < sortedFiles.length; i += concurrencyLimit) {
+    batches.push(sortedFiles.slice(i, i + concurrencyLimit));
+  }
+
+  for (const batch of batches) {
     if (files.length >= maxFiles || totalBytes >= maxBytes) {
       truncated = true;
       break;
     }
 
-    const remainingBytes = Math.max(0, maxBytes - totalBytes);
-    if (remainingBytes === 0) break;
+    const results = await Promise.allSettled(
+      batch.map(async (file) => {
+        if (files.length >= maxFiles || totalBytes >= maxBytes) return null;
 
-    try {
-      const stat = await fs.stat(file.absolutePath);
-      if (stat.size > maxFileBytes) {
-        truncated = true;
-        continue;
-      }
+        const remainingBytes = Math.max(0, maxBytes - totalBytes);
+        if (remainingBytes === 0) return null;
 
-      const cached = cache.get(file.absolutePath, stat.mtimeMs, stat.size);
-      if (cached) {
-        const contentBytes = Buffer.byteLength(cached.content, "utf8");
-        if (contentBytes > remainingBytes) {
+        try {
+          const stat = await fs.stat(file.absolutePath);
+          if (stat.size > maxFileBytes) {
+            return { truncated: true, file: null };
+          }
+
+          const cached = cache.get(file.absolutePath, stat.mtimeMs, stat.size);
+          if (cached) {
+            const contentBytes = Buffer.byteLength(cached.content, "utf8");
+            if (contentBytes > remainingBytes) {
+              return { truncated: true, file: null };
+            }
+
+            const imports = extractImportsFromSource(cached.content, languageFromPath(file.relativePath));
+
+            return {
+              truncated: false,
+              file: {
+                path: file.relativePath,
+                absolutePath: file.absolutePath,
+                language: languageFromPath(file.relativePath),
+                content: cached.content,
+                size: stat.size,
+                symbols: cached.symbols,
+                imports
+              },
+              contentBytes
+            };
+          }
+
+          const raw = await fs.readFile(file.absolutePath, "utf8");
+          const rawBuffer = Buffer.from(raw, "utf8");
+          const content = rawBuffer.length > remainingBytes
+            ? rawBuffer.subarray(0, remainingBytes).toString("utf8")
+            : raw;
+          const language = languageFromPath(file.relativePath);
+          const symbols = extractSymbols(content, language);
+          const imports = extractImportsFromSource(content, language);
+
+          cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols);
+
+          return {
+            truncated: false,
+            file: {
+              path: file.relativePath,
+              absolutePath: file.absolutePath,
+              language,
+              content,
+              size: stat.size,
+              symbols,
+              imports
+            },
+            contentBytes: Buffer.byteLength(content, "utf8")
+          };
+        } catch {
+          cache.invalidate(file.absolutePath);
+          return { skipped: true, file: null };
+        }
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value) {
+        if (result.value.truncated) {
           truncated = true;
           continue;
         }
-
-        const imports = extractImportsFromSource(cached.content, languageFromPath(file.relativePath));
-
-        files.push({
-          path: file.relativePath,
-          absolutePath: file.absolutePath,
-          language: languageFromPath(file.relativePath),
-          content: cached.content,
-          size: stat.size,
-          symbols: cached.symbols,
-          imports
-        });
-
-        totalBytes += contentBytes;
-        cacheHits += 1;
-        continue;
+        if (result.value.skipped) {
+          skipped += 1;
+          truncated = true;
+          continue;
+        }
+        if (result.value.file) {
+          files.push(result.value.file);
+          totalBytes += result.value.contentBytes;
+          if (cache.get(result.value.file.absolutePath, 0, 0)) {
+            cacheHits += 1;
+          } else {
+            cacheMisses += 1;
+          }
+        }
       }
-
-      const raw = await fs.readFile(file.absolutePath, "utf8");
-      const rawBuffer = Buffer.from(raw, "utf8");
-      const content = rawBuffer.length > remainingBytes
-        ? rawBuffer.subarray(0, remainingBytes).toString("utf8")
-        : raw;
-      const language = languageFromPath(file.relativePath);
-      const symbols = extractSymbols(content, language);
-      const imports = extractImportsFromSource(content, language);
-
-      cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols);
-
-      files.push({
-        path: file.relativePath,
-        absolutePath: file.absolutePath,
-        language,
-        content,
-        size: stat.size,
-        symbols,
-        imports
-      });
-
-      totalBytes += Buffer.byteLength(content, "utf8");
-      cacheMisses += 1;
-    } catch {
-      skipped += 1;
-      truncated = true;
-      cache.invalidate(file.absolutePath);
     }
   }
 
@@ -239,8 +281,11 @@ export async function scanRepository(options: ScanRepositoryOptions, cache: File
   const maxFileBytes = options.maxFileBytes ?? 80_000;
   const maxChunkChars = options.maxChunkChars ?? 6_000;
   const skipped = { count: 0 };
+
+  loadIgnoreFiles(rootDir);
+
   const discoveredFiles = await discoverFiles(rootDir, options.files, skipped);
-  const sortedFiles = await sortAndFilterFiles(rootDir, discoveredFiles, options.targetFile);
+  const sortedFiles = await sortAndFilterFiles(rootDir, discoveredFiles, options.targetFile, options.ignoreTests);
   const { files, totalBytes, truncated, skipped: readSkipped, cacheHits, cacheMisses } = await readFilesWithinBudget(sortedFiles, maxFiles, maxBytes, maxFileBytes, cache);
 
   const filesWithImports = files.map((f) => ({

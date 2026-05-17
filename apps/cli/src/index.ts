@@ -16,7 +16,7 @@ import { errorMessage, readConfigFromEnv, createLogger } from "@repolens/shared"
 const log = createLogger("repolens-cli");
 const execFileAsync = promisify(execFile);
 
-async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean }): Promise<void> {
+async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean }): Promise<void> {
   const config = readConfigFromEnv();
   const cache = new FileCache();
   const includeMermaid = !options.noMermaid && config.includeMermaid;
@@ -29,7 +29,8 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     maxFiles: config.maxContextFiles,
     maxBytes: config.maxContextBytes,
     maxFileBytes: config.maxFileBytes,
-    maxChunkChars: config.maxChunkChars
+    maxChunkChars: config.maxChunkChars,
+    ignoreTests: options.ignoreTests
   }, cache);
 
   log.info("scan complete", {
@@ -184,9 +185,10 @@ program
   .option("--no-mermaid", "Skip Mermaid diagram generation")
   .option("--no-ai", "Skip AI-generated summary")
   .option("--file-level", "Generate file-level dependency graph instead of package-level")
-  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean }) => {
+  .option("--ignore-tests", "Exclude test files from scanning")
+  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean; ignoreTests?: boolean }) => {
     try {
-      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel });
+      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests });
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
