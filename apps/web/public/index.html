@@ -17,13 +17,40 @@
     .tab { padding: 6px 14px; border-radius: 6px; background: transparent; border: 1px solid #333; color: #888; cursor: pointer; font-size: 13px; }
     .tab.active { background: #4a9eff; color: white; border-color: #4a9eff; }
     .tab:hover:not(.active) { background: #1a1a24; color: #ddd; }
-    .search-bar { display: flex; gap: 10px; align-items: center; }
+    .search-bar { display: flex; gap: 10px; align-items: center; position: relative; }
     .search-bar input { padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a24; color: white; width: 250px; font-size: 14px; }
     .search-bar input::placeholder { color: #555; }
     .search-bar input:focus { outline: none; border-color: #4a9eff; }
+    .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: #1a1a24; border: 1px solid #333; border-radius: 8px; max-height: 400px; overflow-y: auto; display: none; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .search-dropdown.visible { display: block; }
+    .search-result { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #222; }
+    .search-result:last-child { border-bottom: none; }
+    .search-result:hover, .search-result.active { background: #2a2a3a; }
+    .search-result-type { font-size: 10px; text-transform: uppercase; color: #666; margin-bottom: 2px; }
+    .search-result-title { font-size: 13px; color: #ddd; }
+    .search-result-title mark { background: #4a9eff33; color: #4a9eff; padding: 0 2px; border-radius: 2px; }
+    .search-result-subtitle { font-size: 11px; color: #666; margin-top: 2px; }
+    .export-btn { padding: 6px 12px; border-radius: 6px; background: #2a2a3a; border: 1px solid #333; color: #888; cursor: pointer; font-size: 12px; margin-left: 8px; }
+    .export-btn:hover { background: #3a3a4a; color: #ddd; }
+    .crossref-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; }
+    .crossref-section h3 { font-size: 13px; color: #666; text-transform: uppercase; margin-bottom: 8px; }
+    .crossref-item { padding: 6px 0; font-size: 12px; color: #888; cursor: pointer; }
+    .crossref-item:hover { color: #4a9eff; }
+    .crossref-file { color: #4a9eff; font-size: 11px; }
+    .crossref-line { color: #666; margin-left: 8px; }
+    .file-content { background: #0a0a0f; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 12px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; max-height: 400px; overflow-y: auto; white-space: pre; }
+    .file-content .line-num { color: #444; user-select: none; margin-right: 12px; }
+    .file-content .kw { color: #c678dd; }
+    .file-content .str { color: #98c379; }
+    .file-content .cmt { color: #5c6370; font-style: italic; }
+    .file-content .fn { color: #61afef; }
+    .file-content .num { color: #d19a66; }
+    .file-content .op { color: #56b6c2; }
+    .file-content .hl-line { background: #4a9eff22; display: block; margin: 0 -12px; padding: 0 12px; }
     .main { flex: 1; display: flex; overflow: hidden; }
     #graph { flex: 1; background: #08080c; }
     #architecture { flex: 1; background: #08080c; display: none; overflow: auto; padding: 20px; }
+    #dataflow { flex: 1; background: #08080c; display: none; }
     .sidebar { width: 380px; background: #12121a; border-left: 1px solid #222; overflow-y: auto; padding: 20px; }
     .sidebar h3 { font-size: 13px; color: #666; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
     .file-path { font-size: 15px; color: #4a9eff; margin-bottom: 8px; font-weight: 500; word-break: break-all; }
@@ -42,7 +69,7 @@
     .stat { text-align: center; background: #1a1a24; padding: 12px 16px; border-radius: 8px; flex: 1; }
     .stat-value { font-size: 22px; font-weight: 600; color: #4a9eff; }
     .stat-label { font-size: 10px; color: #666; text-transform: uppercase; margin-top: 4px; }
-    .legend { display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; }
+    .legend { display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; flex-wrap: wrap; }
     .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #666; }
     .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
     .arch-layer { background: #12121a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
@@ -54,6 +81,40 @@
     .arch-conn { font-size: 12px; color: #666; }
     .arch-conn span { color: #4a9eff; }
     .loading { text-align: center; padding: 40px; color: #666; }
+    .flow-section { background: #12121a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .flow-section h4 { font-size: 14px; color: #4a9eff; margin-bottom: 8px; }
+    .flow-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #888; }
+    .flow-arrow { color: #4a9eff; font-weight: bold; }
+    .flow-role { background: #1a1a24; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+    .flow-role.source { color: #67c23a; border: 1px solid #3d6e3d; }
+    .flow-role.target { color: #e6a23c; border: 1px solid #6e5230; }
+    .flow-role.pass-through { color: #9b64d3; border: 1px solid #4a3069; }
+    @media (max-width: 1024px) {
+      .sidebar { width: 320px; }
+      .search-bar input { width: 200px; }
+    }
+    @media (max-width: 768px) {
+      header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 10px 15px; }
+      .header-left { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .tabs { margin-left: 0; }
+      .search-bar { width: 100%; }
+      .search-bar input { width: 100%; }
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; max-height: 40vh; border-left: none; border-top: 1px solid #222; }
+      #graph, #architecture, #dataflow { min-height: 50vh; }
+      .stats { flex-direction: column; gap: 8px; }
+      .stat { padding: 8px 12px; }
+      .stat-value { font-size: 18px; }
+      .legend { flex-direction: column; gap: 6px; }
+      .arch-layer .files { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      header h1 { font-size: 16px; }
+      .tab { padding: 4px 10px; font-size: 12px; }
+      .sidebar { padding: 12px; }
+      .file-path { font-size: 13px; }
+      .symbol-tag { font-size: 10px; padding: 3px 6px; }
+    }
   </style>
 </head>
 <body>
@@ -64,15 +125,19 @@
       <div class="tabs">
         <button class="tab active" onclick="showTab('graph')">Graph</button>
         <button class="tab" onclick="showTab('architecture')">Architecture</button>
+        <button class="tab" onclick="showTab('dataflow')">Data Flow</button>
       </div>
     </div>
     <div class="search-bar">
-      <input type="text" id="search" placeholder="Search files or symbols...">
+      <input type="text" id="search" placeholder="Search files or symbols..." autocomplete="off">
+      <div class="search-dropdown" id="searchDropdown"></div>
+      <button class="export-btn" onclick="exportGraph()">Export PNG</button>
     </div>
   </header>
   <div class="main">
     <div id="graph"></div>
     <div id="architecture"></div>
+    <div id="dataflow"></div>
     <div class="sidebar" id="sidebar">
       <div class="empty-state">
         <p>Click a node to explore</p>
@@ -87,8 +152,10 @@
     let nodesDataSet = null;
     let edgesDataSet = null;
     let allNodesData = [];
+    let allEdgesData = [];
     let repoData = null;
     let currentTab = 'graph';
+    let layerColors = {};
 
     async function loadRepoData() {
       try {
@@ -143,33 +210,60 @@
       
       document.getElementById('graph').style.display = tab === 'graph' ? 'block' : 'none';
       document.getElementById('architecture').style.display = tab === 'architecture' ? 'block' : 'none';
+      document.getElementById('dataflow').style.display = tab === 'dataflow' ? 'block' : 'none';
       
       if (tab === 'architecture' && repoData) {
         renderArchitecture();
       }
+      if (tab === 'dataflow' && repoData) {
+        renderDataFlow();
+      }
+    }
+
+    function getLayerForFile(filePath) {
+      const layers = [
+        { name: "Presentation", pattern: /\/(components|pages|views|ui|cli)\//i, color: "#4a9eff" },
+        { name: "Business Logic", pattern: /\/(hooks|middleware|services|controllers|handlers)\//i, color: "#67c23a" },
+        { name: "Utilities", pattern: /\/(utils|helpers|lib|common)\//i, color: "#e6a23c" },
+        { name: "Data Layer", pattern: /\/(models|db|repository|data)\//i, color: "#9b64d3" },
+        { name: "Infrastructure", pattern: /\/(config|types|constants|cache)\//i, color: "#888" },
+        { name: "Core", pattern: /\/(context-engine|shared|ai)\//i, color: "#ff6b6b" },
+        { name: "Other", pattern: /.*/, color: "#666" }
+      ];
+
+      for (const layer of layers) {
+        if (layer.pattern.test(filePath)) {
+          return layer;
+        }
+      }
+      return layers[layers.length - 1];
     }
 
     function initGraph(data) {
+      searchIndex = buildSearchIndex();
+      crossRefIndex = buildCrossRefIndex();
       const container = document.getElementById('graph');
       const sidebar = document.getElementById('sidebar');
 
       allNodesData = data.files.map((file) => {
         const name = file.path.split('/').pop();
         const hasSymbols = file.symbols && file.symbols.length > 0;
-        const isCore = file.path.includes('context-engine') || file.path.includes('shared');
+        const layer = getLayerForFile(file.path);
         const isEntry = file.path.includes('index.ts');
         
+        layerColors[file.path] = layer.color;
+
         return {
           id: file.path,
           label: name,
           title: file.path,
-          size: isEntry ? 35 : (isCore ? 28 : (hasSymbols ? 22 : 16)),
-          color: isEntry ? '#e6a23c' : (isCore ? '#4a9eff' : '#67c23a'),
+          size: isEntry ? 35 : (hasSymbols ? 22 : 16),
+          color: layer.color,
           font: { color: '#ddd', size: 11 }
         };
       });
 
-      const edgesList = [];
+      allEdgesData = [];
       const filePaths = data.files.map(f => f.path);
       const pathToIndex = {};
       filePaths.forEach((p, i) => pathToIndex[p] = i);
@@ -185,20 +279,20 @@
           
           const exactMatch = baseDir + '/' + cleanImport;
           if (pathToIndex[exactMatch] !== undefined) {
-            edgesList.push({ from: file.path, to: exactMatch, color: { color: '#2a2a3a' }, width: 1 });
+            allEdgesData.push({ from: file.path, to: exactMatch, color: { color: '#2a2a3a' }, width: 1 });
             return;
           }
           
           const importFilename = cleanImport.split('/').pop();
           const possibleMatches = filePaths.filter(p => p.endsWith(importFilename) && p !== file.path);
           if (possibleMatches.length > 0) {
-            edgesList.push({ from: file.path, to: possibleMatches[0], color: { color: '#2a2a3a' }, width: 1 });
+            allEdgesData.push({ from: file.path, to: possibleMatches[0], color: { color: '#2a2a3a' }, width: 1 });
           }
         });
       });
 
       nodesDataSet = new vis.DataSet(allNodesData);
-      edgesDataSet = new vis.DataSet(edgesList);
+      edgesDataSet = new vis.DataSet(allEdgesData);
 
       const options = {
         nodes: { shape: 'dot', font: { face: 'arial' } },
@@ -217,19 +311,22 @@
 
       const totalSymbols = data.files.reduce((sum, f) => sum + (f.symbols ? f.symbols.length : 0), 0);
       
+      const layerLegend = Object.entries(layerColors).slice(0, 6).map(([path, color]) => {
+        const layer = getLayerForFile(path);
+        return `<div class="legend-item"><div class="legend-dot" style="background:${color}"></div> ${layer.name}</div>`;
+      }).join('');
+      
       sidebar.innerHTML = `
         <div class="stats">
           <div class="stat"><div class="stat-value">${data.summary.includedFiles || data.files.length}</div><div class="stat-label">Files</div></div>
           <div class="stat"><div class="stat-value">${totalSymbols}</div><div class="stat-label">Symbols</div></div>
-          <div class="stat"><div class="stat-value">${edgesList.length}</div><div class="stat-label">Connections</div></div>
+          <div class="stat"><div class="stat-value">${allEdgesData.length}</div><div class="stat-label">Connections</div></div>
         </div>
         <div class="empty-state">
           <p>Click a node to explore</p>
         </div>
         <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#e6a23c"></div> Entry Point</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div> Core Package</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#67c23a"></div> Other</div>
+          ${layerLegend}
         </div>
       `;
     }
@@ -241,6 +338,7 @@
       const sidebar = document.getElementById('sidebar');
       const symbolCount = file.symbols ? file.symbols.length : 0;
       const importCount = file.imports ? file.imports.length : 0;
+      const layer = getLayerForFile(filePath);
 
       let html = '';
       
@@ -254,14 +352,21 @@
           <div class="stat"><div class="stat-value">${importCount}</div><div class="stat-label">Imports</div></div>
         </div>
         <div class="file-path">${file.path}</div>
-        <div class="language-tag">${file.language || 'unknown'}</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+          <div class="language-tag">${file.language || 'unknown'}</div>
+          <div class="flow-role" style="color:${layer.color};border-color:${layer.color};cursor:default">${layer.name} Layer</div>
+          <button class="export-btn" style="margin:0;padding:2px 8px;font-size:11px" onclick="viewFileSource('${file.path}')">View Source</button>
+        </div>
+        <div id="file-content-viewer"></div>
       `;
 
       if (file.symbols && file.symbols.length > 0) {
         html += `<div class="section"><h3>Symbols</h3>`;
         file.symbols.forEach(s => {
           const cls = s.kind === 'function' ? 'fn' : s.kind === 'class' ? 'cls' : s.kind === 'interface' ? 'int' : s.kind === 'method' ? 'fn' : 'var';
-          html += `<span class="symbol-tag ${cls}">${s.kind} ${s.name}${s.line ? ' (L' + s.line + ')' : ''}</span>`;
+          const refCount = (crossRefIndex[s.name.toLowerCase()] || []).length;
+          const refBadge = refCount > 1 ? ` <span style="color:#666;font-size:10px">(${refCount})</span>` : '';
+          html += `<span class="symbol-tag ${cls}" style="cursor:pointer" onclick="showSymbolCrossRef('${s.name}', ${s.line})">${s.kind} ${s.name}${s.line ? ' (L' + s.line + ')' : ''}${refBadge}</span>`;
         });
         html += `</div>`;
       }
@@ -274,11 +379,19 @@
         html += `</div>`;
       }
 
+      const importedBy = allEdgesData.filter(e => e.to === filePath).map(e => e.from);
+      if (importedBy.length > 0) {
+        html += `<div class="section"><h3>Imported By (${importedBy.length})</h3>`;
+        importedBy.forEach(imp => {
+          const name = imp.split('/').pop();
+          html += `<a class="import-link" onclick="highlightNode('${imp}')">← ${name}</a>`;
+        });
+        html += `</div>`;
+      }
+
       html += `
         <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#e6a23c"></div> Entry Point</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div> Core Package</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#67c23a"></div> Other</div>
+          <div class="legend-item"><div class="legend-dot" style="background:${layer.color}"></div> ${layer.name}</div>
         </div>
       `;
 
@@ -302,11 +415,12 @@
 
     function detectLayers(files) {
       const layers = [
-        { name: "Presentation (UI)", pattern: /\/(components|pages|views|ui)\//i, color: "#4a9eff", files: [] },
+        { name: "Presentation (UI)", pattern: /\/(components|pages|views|ui|cli)\//i, color: "#4a9eff", files: [] },
         { name: "Business Logic", pattern: /\/(hooks|middleware|services|controllers|handlers)\//i, color: "#67c23a", files: [] },
         { name: "Utilities", pattern: /\/(utils|helpers|lib|common)\//i, color: "#e6a23c", files: [] },
         { name: "Data Layer", pattern: /\/(models|db|repository|data)\//i, color: "#9b64d3", files: [] },
-        { name: "Infrastructure", pattern: /\/(config|types|constants)\//i, color: "#888", files: [] },
+        { name: "Infrastructure", pattern: /\/(config|types|constants|cache)\//i, color: "#888", files: [] },
+        { name: "Core Engine", pattern: /\/(context-engine|shared|ai)\//i, color: "#ff6b6b", files: [] },
         { name: "Other", pattern: /.*/, color: "#666", files: [] }
       ];
 
@@ -352,16 +466,190 @@
       container.innerHTML = html;
     }
 
+    function renderDataFlow() {
+      const container = document.getElementById('dataflow');
+      const sidebar = document.getElementById('sidebar');
+      
+      // Build adjacency list for data flow analysis
+      const importsMap = {};
+      const importedByMap = {};
+      
+      repoData.files.forEach(file => {
+        importsMap[file.path] = [];
+        importedByMap[file.path] = [];
+      });
+      
+      allEdgesData.forEach(edge => {
+        if (importsMap[edge.from]) {
+          importsMap[edge.from].push(edge.to);
+        }
+        if (importedByMap[edge.to]) {
+          importedByMap[edge.to].push(edge.from);
+        }
+      });
+
+      // Find entry points (files that import others but aren't imported by many)
+      const entryPoints = repoData.files.filter(f => 
+        importsMap[f.path].length > 0 && importedByMap[f.path].length <= 1
+      ).slice(0, 5);
+
+      let html = '<div style="max-width: 900px; margin: 0 auto; padding: 20px;">';
+      html += '<h2 style="color: #4a9eff; margin-bottom: 20px;">Data Flow Analysis</h2>';
+      html += '<p style="color: #666; margin-bottom: 20px;">Click any entry point to trace its data flow through the codebase.</p>';
+
+      entryPoints.forEach(ep => {
+        const layer = getLayerForFile(ep.path);
+        html += `<div class="flow-section" style="border-left: 3px solid ${layer.color};">`;
+        html += `<h4 style="color: ${layer.color};">${ep.path.split('/').pop()}</h4>`;
+        html += `<p style="color: #888; font-size: 12px; margin-bottom: 12px;">${ep.summary || 'No summary available.'}</p>`;
+        
+        // Trace flow
+        const visited = new Set();
+        const flowChain = [];
+        
+        function traceFlow(filePath, depth = 0) {
+          if (visited.has(filePath) || depth > 4) return;
+          visited.add(filePath);
+          
+          const file = repoData.files.find(f => f.path === filePath);
+          const fileLayer = getLayerForFile(filePath);
+          
+          flowChain.push({ path: filePath, layer: fileLayer, depth, imports: importsMap[filePath] || [] });
+          
+          (importsMap[filePath] || []).forEach(imp => {
+            traceFlow(imp, depth + 1);
+          });
+        }
+        
+        traceFlow(ep.path);
+        
+        html += '<div style="margin-top: 12px;">';
+        flowChain.forEach((step, idx) => {
+          const indent = step.depth * 20;
+          const arrow = step.depth > 0 ? '<span class="flow-arrow">→</span>' : '';
+          html += `<div class="flow-item" style="padding-left: ${indent}px;">`;
+          html += `${arrow} <span class="flow-role" style="color:${step.layer.color};border-color:${step.layer.color}">${step.layer.name}</span>`;
+          html += `<span class="arch-file" onclick="highlightNode('${step.path}')" style="margin-left: 8px;">${step.path.split('/').pop()}</span>`;
+          html += `</div>`;
+        });
+        html += '</div>';
+        
+        html += '</div>';
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+
+      // Update sidebar with flow stats
+      const totalFlows = entryPoints.length;
+      const totalConnections = allEdgesData.length;
+      
+      sidebar.innerHTML = `
+        <div class="stats">
+          <div class="stat"><div class="stat-value">${totalFlows}</div><div class="stat-label">Entry Points</div></div>
+          <div class="stat"><div class="stat-value">${totalConnections}</div><div class="stat-label">Connections</div></div>
+        </div>
+        <div class="empty-state">
+          <p>Data flow shows how data moves through the codebase from entry points to dependencies.</p>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div> Presentation</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#67c23a"></div> Business Logic</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e6a23c"></div> Utilities</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#9b64d3"></div> Data Layer</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div> Core Engine</div>
+        </div>
+      `;
+    }
+
+    let searchActiveIndex = -1;
+    let searchResults = [];
+    let searchIndex = [];
+    let crossRefIndex = {};
+
+    function highlightText(text, query) {
+      if (!query) return escapeHtml(text);
+      const idx = text.toLowerCase().indexOf(query.toLowerCase());
+      if (idx === -1) return escapeHtml(text);
+      return escapeHtml(text.substring(0, idx)) + '<mark>' + escapeHtml(text.substring(idx, idx + query.length)) + '</mark>' + escapeHtml(text.substring(idx + query.length));
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function buildSearchIndex() {
+      const index = [];
+      repoData.files.forEach(file => {
+        index.push({ type: 'file', path: file.path, title: file.path.split('/').pop(), subtitle: file.summary?.substring(0, 80) || file.language || '' });
+        if (file.symbols) {
+          file.symbols.forEach(s => {
+            index.push({ type: 'symbol', path: file.path, title: s.name, subtitle: `${s.kind} in ${file.path.split('/').pop()}`, line: s.line });
+          });
+        }
+      });
+      return index;
+    }
+
+    function buildCrossRefIndex() {
+      const crossRef = {};
+      repoData.files.forEach(file => {
+        if (!file.symbols) return;
+        file.symbols.forEach(s => {
+          const key = s.name.toLowerCase();
+          if (!crossRef[key]) crossRef[key] = [];
+          crossRef[key].push({ file: file.path, kind: s.kind, line: s.line });
+        });
+      });
+      repoData.files.forEach(file => {
+        if (!file.imports) return;
+        file.imports.forEach(imp => {
+          const impName = imp.replace(/\.js$/, '').replace(/^\.\/?/, '').split('/').pop().toLowerCase();
+          if (crossRef[impName]) {
+            crossRef[impName].push({ file: file.path, kind: 'import', line: null });
+          }
+        });
+      });
+      return crossRef;
+    }
+
     document.getElementById('search').addEventListener('input', function(e) {
-      const query = e.target.value.toLowerCase();
-      if (!query || !nodesDataSet) {
+      const query = e.target.value.trim().toLowerCase();
+      const dropdown = document.getElementById('searchDropdown');
+      searchActiveIndex = -1;
+
+      if (!query) {
+        dropdown.classList.remove('visible');
         if (nodesDataSet) {
-          nodesDataSet.update(allNodesData.map(n => ({ id: n.id, color: n.color, size: n.size })));
+          nodesDataSet.update(allNodesData.map(n => ({ id: n.id, color: layerColors[n.id] || n.color, size: n.size })));
         }
         return;
       }
 
-      const matches = allNodesData.filter(n => 
+      searchResults = searchIndex.filter(item =>
+        item.title.toLowerCase().includes(query) ||
+        item.path.toLowerCase().includes(query) ||
+        item.subtitle.toLowerCase().includes(query)
+      ).slice(0, 15);
+
+      if (searchResults.length === 0) {
+        dropdown.classList.remove('visible');
+        return;
+      }
+
+      let html = '';
+      searchResults.forEach((result, idx) => {
+        const icon = result.type === 'file' ? 'FILE' : result.subtitle.includes('function') || result.subtitle.includes('method') ? 'FN' : result.subtitle.includes('class') ? 'CLS' : result.subtitle.includes('interface') ? 'INT' : 'SYM';
+        html += `<div class="search-result" data-index="${idx}" onmouseenter="setSearchActive(${idx})" onclick="selectSearchResult(${idx})">`;
+        html += `<div class="search-result-type">${icon} ${result.type}</div>`;
+        html += `<div class="search-result-title">${highlightText(result.title, query)}</div>`;
+        html += `<div class="search-result-subtitle">${highlightText(result.subtitle, query)}</div>`;
+        html += `</div>`;
+      });
+      dropdown.innerHTML = html;
+      dropdown.classList.add('visible');
+
+      const matches = allNodesData.filter(n =>
         n.id.toLowerCase().includes(query) ||
         (repoData?.files.find(f => f.path === n.id)?.symbols?.some(s => s.name.toLowerCase().includes(query))) ||
         (repoData?.files.find(f => f.path === n.id)?.summary?.toLowerCase().includes(query))
@@ -378,6 +666,148 @@
         network.focus(matches[0].id, { animation: true });
       }
     });
+
+    document.getElementById('search').addEventListener('keydown', function(e) {
+      const dropdown = document.getElementById('searchDropdown');
+      if (!dropdown.classList.contains('visible')) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        searchActiveIndex = Math.min(searchActiveIndex + 1, searchResults.length - 1);
+        updateSearchActive();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        searchActiveIndex = Math.max(searchActiveIndex - 1, 0);
+        updateSearchActive();
+      } else if (e.key === 'Enter' && searchActiveIndex >= 0) {
+        e.preventDefault();
+        selectSearchResult(searchActiveIndex);
+      } else if (e.key === 'Escape') {
+        dropdown.classList.remove('visible');
+        this.blur();
+      }
+    });
+
+    function setSearchActive(idx) {
+      searchActiveIndex = idx;
+      updateSearchActive();
+    }
+
+    function updateSearchActive() {
+      document.querySelectorAll('.search-result').forEach((el, i) => {
+        el.classList.toggle('active', i === searchActiveIndex);
+      });
+      const active = document.querySelector('.search-result.active');
+      if (active) active.scrollIntoView({ block: 'nearest' });
+    }
+
+    function selectSearchResult(idx) {
+      const result = searchResults[idx];
+      if (!result) return;
+
+      document.getElementById('searchDropdown').classList.remove('visible');
+      document.getElementById('search').value = result.title;
+
+      if (result.type === 'file') {
+        highlightNode(result.path);
+      } else {
+        highlightNode(result.path);
+        setTimeout(() => showSymbolCrossRef(result.title, result.line), 300);
+      }
+    }
+
+    function showSymbolCrossRef(symbolName, line) {
+      const key = symbolName.toLowerCase();
+      const refs = crossRefIndex[key];
+      if (!refs || refs.length <= 1) return;
+
+      const sidebar = document.getElementById('sidebar');
+      const otherRefs = refs.filter(r => r.line !== line || r.kind === 'import');
+
+      if (otherRefs.length === 0) return;
+
+      let html = sidebar.innerHTML;
+      html += `<div class="crossref-section">`;
+      html += `<h3>Referenced In (${otherRefs.length})</h3>`;
+      otherRefs.slice(0, 10).forEach(ref => {
+        const fileName = ref.file.split('/').pop();
+        html += `<div class="crossref-item" onclick="highlightNode('${ref.file}')">`;
+        html += `<span class="crossref-file">${fileName}</span>`;
+        if (ref.line) html += `<span class="crossref-line">L${ref.line}</span>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+      sidebar.innerHTML = html;
+    }
+
+    document.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('searchDropdown');
+      const searchInput = document.getElementById('search');
+      if (!dropdown.contains(e.target) && e.target !== searchInput) {
+        dropdown.classList.remove('visible');
+      }
+    });
+
+    function exportGraph() {
+      const canvas = document.querySelector('#graph canvas');
+      if (!canvas) return;
+      const link = document.createElement('a');
+      link.download = 'repolens-graph.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    async function viewFileSource(filePath) {
+      const container = document.getElementById('file-content-viewer');
+      container.innerHTML = '<div class="loading">Loading source...</div>';
+
+      try {
+        const response = await fetch('./' + filePath);
+        if (!response.ok) throw new Error('File not found');
+        const source = await response.text();
+        const highlighted = highlightSyntax(source, filePath);
+        container.innerHTML = `<div class="file-content">${highlighted}</div>`;
+      } catch (e) {
+        container.innerHTML = '<div style="color:#666;font-size:12px;padding:8px 0">Source not available (serve via HTTP server to view)</div>';
+      }
+    }
+
+    function highlightSyntax(source, filePath) {
+      const lines = source.split('\n');
+      const lang = filePath.split('.').pop();
+      const isTsJs = ['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs'].includes(lang);
+      const isPy = lang === 'py';
+      const isGo = lang === 'go';
+      const isRust = lang === 'rs';
+
+      return lines.map((line, idx) => {
+        let escaped = escapeHtml(line);
+
+        if (isTsJs || isPy || isGo || isRust) {
+          const keywords = isTsJs ? /\b(const|let|var|function|class|interface|type|import|export|from|return|if|else|for|while|switch|case|break|continue|try|catch|finally|throw|new|this|async|await|yield|typeof|instanceof|in|of|extends|implements|private|public|protected|static|readonly|abstract|enum|namespace|module|declare|as|is|keyof|infer|void|null|undefined|never|any|string|number|boolean|object|symbol|true|false)\b/g :
+                           isPy ? /\b(def|class|import|from|return|if|elif|else|for|while|try|except|finally|raise|with|as|yield|async|await|lambda|pass|break|continue|and|or|not|is|in|True|False|None|self|print|global|nonlocal|assert|del)\b/g :
+                           isGo ? /\b(func|package|import|var|const|type|struct|interface|map|chan|go|defer|return|if|else|for|range|switch|case|break|continue|fallthrough|select|go|defer|nil|true|false|bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|byte|rune|error|make|new|len|cap|append|copy|delete|close|panic|recover)\b/g :
+                           /\b(fn|let|mut|pub|use|mod|struct|enum|impl|trait|type|const|static|ref|self|Self|super|crate|where|for|loop|while|if|else|match|return|async|await|move|dyn|unsafe|extern|impl|impl|impl|true|false|Some|None|Ok|Err|Vec|String|str|i32|i64|u32|u64|f32|f64|bool|char|Box|Rc|Arc|Option|Result)\b/g;
+
+          escaped = escaped.replace(keywords, '<span class="kw">$1</span>');
+
+          const strings = /(["'`])(?:(?!\1|\\).|\\.)*?\1/g;
+          escaped = escaped.replace(strings, '<span class="str">$&</span>');
+
+          const comments = isPy ? /(#.*$)/g : /(\/\/.*$|\/\*[\s\S]*?\*\/)/g;
+          escaped = escaped.replace(comments, '<span class="cmt">$&</span>');
+
+          const numbers = /\b(\d+\.?\d*)\b/g;
+          escaped = escaped.replace(numbers, '<span class="num">$1</span>');
+
+          const fnCalls = /\b([a-zA-Z_]\w*)\s*(?=\()/g;
+          escaped = escaped.replace(fnCalls, '<span class="fn">$1</span>(');
+        }
+
+        const lineNum = `<span class="line-num">${idx + 1}</span>`;
+        return `${lineNum}${escaped}`;
+      }).join('\n');
+    }
 
     loadRepoData();
   </script>
