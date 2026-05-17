@@ -1,23 +1,36 @@
 # RepoLens
 
-> Generate living documentation from codebases — architecture maps, dependency graphs, and data flow traces.
+> Understand any codebase in minutes, not days.
 
 ## Overview
 
-RepoLens is a CLI tool that scans a repository, extracts context (files, symbols, imports), scores files heuristically, and produces Markdown or JSON reports with Mermaid.js diagrams. An optional AI provider can generate architecture summaries, code flow traces, and diff analysis.
+RepoLens scans a repository, extracts architecture (files, symbols, imports), and provides two ways to explore it:
+
+1. **Interactive Explorer** — Web UI for navigating codebase architecture, tracing data flow, and understanding how pieces connect
+2. **Living Docs** — GitHub Action that auto-generates architecture documentation and detects architectural changes on every PR
+
+The core engine uses heuristic scoring to prioritize important files, multi-language symbol extraction, and import graph analysis — all optimized for helping developers understand unfamiliar codebases quickly.
 
 ## Features
 
-- **Architecture Reports** — Markdown or JSON reports with Overview, Module Map, Key Symbols, and Mermaid dependency graphs
-- **Heuristic File Scoring** — Prioritizes important files using import graphs, git recency, test pairing, and directory proximity
+### Core Engine
 - **Multi-language Support** — TypeScript/JavaScript via AST; Python, Go, Rust, and Java via regex patterns
-- **Smart Filtering** — `.gitignore`/`.repolensignore` with negation, anchoring, and `**` globbing; `--include`/`--exclude` patterns; `--ignore-tests` flag; automatic generated file detection
+- **Smart File Scoring** — Prioritizes important files using import graphs, git recency, test pairing, and directory proximity
+- **Symbol Extraction** — Functions, classes, methods, interfaces with line numbers
+- **Import Graph** — Dependency tracking with package resolution and external dependency detection
 - **Content-level Diffs** — Unified diffs, symbol additions/removals, and import changes between git refs
-- **Symbol Cross-referencing** — Track which symbols reference which across files
-- **File Caching** — In-memory LRU cache with mtime-based invalidation
-- **AI Integration** — Optional AI-generated architecture summaries, code flow tracing, and diff analysis
-- **Progress Reporting** — Real-time scan progress feedback
-- **SSRF Protection** — Remote AI provider validates URLs against allowlisted domains and blocked ports
+- **Smart Filtering** — `.gitignore`/`.repolensignore` with negation, anchoring, and `**` globbing; `--include`/`--exclude` patterns; automatic generated file detection
+
+### Interactive Explorer (Coming Soon)
+- Visual architecture map with clickable nodes
+- Trace data flow from entry point to database
+- Search: "auth" → highlight all auth-related files and symbols
+- Click any symbol → see where it's referenced across the codebase
+
+### Living Docs (Coming Soon)
+- GitHub Action that auto-generates `ARCHITECTURE.md` on every push
+- PR comments showing architectural impact: new deps, removed deps, modified flows
+- Documentation that stays current as code changes
 
 ## Quick Start
 
@@ -28,74 +41,39 @@ pnpm install
 # Build all packages
 pnpm run build
 
-# Generate a config file
-pnpm dev:cli init /path/to/repo
-
-# Scan a repository
+# Scan a repository (generates ARCHITECTURE.md + JSON)
 pnpm dev:cli scan /path/to/repo
 
-# Scan with JSON output
+# Scan with JSON output (powers the web UI)
 pnpm dev:cli scan /path/to/repo -f json
-
-# Scan specific files only
-pnpm dev:cli scan /path/to/repo --include "src/**/*.ts" --exclude "**/*.test.ts"
-
-# Scan relative to a target file
-pnpm dev:cli scan /path/to/repo --target-file src/auth.ts
-
-# Trace code flow (requires AI API key)
-pnpm dev:cli trace /path/to/repo "how does authentication work?"
 
 # Compare two git refs
 pnpm dev:cli diff /path/to/repo --base main --head feature-branch
 ```
 
-## Commands
+See [ROADMAP.md](./ROADMAP.md) for the full product roadmap and upcoming features.
+
+## CLI Reference
+
+The CLI is the foundation that powers both the Interactive Explorer and Living Docs.
 
 ### `scan [dir]`
-
 Scan a repository and generate architecture documentation.
 
 | Option | Description |
 |--------|-------------|
-| `-o, --output <dir>` | Output directory (defaults to repo root) |
-| `-f, --format <format>` | Output format: `markdown` (default) or `json` |
-| `--no-mermaid` | Skip Mermaid diagram generation |
-| `--no-ai` | Skip AI-generated summary |
-| `--file-level` | Generate file-level dependency graph instead of package-level |
-| `--ignore-tests` | Exclude test files from scanning |
-| `--target-file <path>` | Score files relative to this target (proximity, test-pairing, same-package) |
-| `--include <patterns...>` | Only include files matching these glob patterns |
-| `--exclude <patterns...>` | Exclude files matching these glob patterns |
-
-**Outputs (Markdown):**
-- `ARCHITECTURE.md` — Full architecture report
-- `DEPENDENCIES.mmd` — Standalone Mermaid dependency diagram
-- `AI_SUMMARY.md` — AI-generated architecture summary (if API key configured)
-
-**Outputs (JSON):**
-- `ARCHITECTURE.json` — Structured JSON with files, symbols, imports, import graph, modules, and key symbols
-
-### `trace [dir] [query]`
-
-Trace code flow through a repository using AI. Requires `AI_PROVIDER_API_KEY`.
+| `-o, --output <dir>` | Output directory |
+| `-f, --format <format>` | `markdown` (default) or `json` |
+| `--include <patterns...>` | Only include matching files |
+| `--exclude <patterns...>` | Exclude matching files |
 
 ### `diff [dir]`
-
-Compare two git refs and analyze changes with content-level diffs, symbol tracking, and import analysis.
+Compare two git refs with content-level diffs and symbol tracking.
 
 | Option | Description |
 |--------|-------------|
-| `--base <ref>` | Base git ref (e.g., `main`) — **required** |
-| `--head <ref>` | Head git ref (defaults to `HEAD`) |
-| `-o, --output <dir>` | Output directory (defaults to repo root) |
-
-**Outputs:**
-- `DIFF.md` — Content-level diff report with unified diffs, symbol additions/removals, and import changes (or AI analysis if API key configured)
-
-### `init [dir]`
-
-Generate a `.repolensrc.json` configuration file with sensible defaults.
+| `--base <ref>` | Base ref (required) |
+| `--head <ref>` | Head ref (default: `HEAD`) |
 
 ## Configuration
 
@@ -136,42 +114,25 @@ Example `.repolensrc.json`:
 ```
 repolens/
 ├── packages/
-│   ├── shared/           # Core types, config, errors, logger, token budget
-│   ├── context-engine/   # Scanner, cache, symbol extractor, import graph, diff analyzer, JSON output, progress
-│   └── ai/               # AI provider factory, remote/local providers, doc generator
+│   ├── shared/           # Core types, config, errors, logger
+│   ├── context-engine/   # Scanner, symbol extractor, import graph, diff analyzer
+│   └── ai/               # AI provider (optional, for future features)
 ├── apps/
-│   └── cli/              # CLI with scan, trace, diff, and init commands
+│   ├── cli/              # CLI: scan, diff commands
+│   ├── web/              # Interactive Explorer (coming soon)
+│   └── github-action/    # Living Docs Action (coming soon)
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # GitHub Actions CI
 ├── package.json
 ├── pnpm-workspace.yaml
-└── tsconfig.json
+├── tsconfig.json
+└── ROADMAP.md            # Product roadmap
 ```
 
-### Package Dependencies
+## How It Works
 
-```
-apps/cli
-├── @repolens/shared
-├── @repolens/context-engine
-│   └── @repolens/shared
-└── @repolens/ai
-    └── @repolens/shared
-```
-
-## Ignore Files & Filtering
-
-RepoLens respects `.gitignore` and `.repolensignore` files with full support for:
-- Negation patterns (`!pattern` to un-ignore)
-- Root anchoring (`/pattern` to match only at root)
-- Recursive globbing (`**` to match any depth)
-
-Additionally, generated files are automatically excluded (`.pb.*`, `.gen.*`, `_generated`, `.d.ts`, `.swagger.ts`, etc.).
-
-Use `--ignore-tests` to exclude test files, or `--include`/`--exclude` for fine-grained glob patterns.
-
-## Heuristic File Scoring
+### Smart File Scoring
 
 Files are scored and sorted before inclusion. Lower score = higher priority:
 
@@ -188,39 +149,13 @@ score = base * 10 + importScore * 2 + recencyScore * 3 + testPairScore * 4 + pro
 | `proximityScore` | 2 | Directory depth overlap with target file |
 | `samePackageScore` | 1 | 0.5 if in same package/apps directory |
 
-## AI Provider Strategy
+### Output Formats
 
-- **LocalAIProvider** — Dev-only provider that simulates streaming without an API key
-- **RemoteAIProvider** — Production provider calling OpenAI-compatible `/chat/completions` with SSE streaming
-- **Factory pattern** — `createAIProvider(config)` selects based on presence of `aiProviderApiKey`
-- **SSRF protection** — HTTPS required, allowlisted domains only (openai.com, openrouter.ai, together.xyz, groq.com, anthropic.com, deepseek.com, localhost), blocked dangerous ports, 120s timeout
+**Markdown** — Human-readable reports with Mermaid.js diagrams:
+- Overview, Module Map, Key Symbols, Dependency Graph
 
-## Output Format
-
-### Markdown
-
-Reports are generated in **Markdown** with embedded Mermaid.js diagrams (renderable in GitHub, VS Code, etc.):
-
-- **Overview** — File count, total bytes, languages, entry points
-- **Module Map** — Modules with file count, symbol count, and imported-by references
-- **Key Symbols** — Top 15 symbols by import count with location
-- **Dependency Graph** — Mermaid `graph TD` diagram (package-level or file-level)
-
-### JSON
-
-Use `-f json` for structured output suitable for programmatic consumption:
-
-```json
-{
-  "version": "0.1.0",
-  "summary": { "rootDir": "...", "scannedFiles": 100, "includedFiles": 80, "totalBytes": 120000 },
-  "files": [{ "path": "src/index.ts", "language": "typescript", "symbols": [...], "imports": [...] }],
-  "importGraph": { "nodes": [...], "packages": [...], "externalDeps": [...] },
-  "entryPoints": ["src/index.ts"],
-  "modules": [{ "name": "src", "files": [...], "symbolCount": 10 }],
-  "keySymbols": [{ "kind": "function", "name": "main", "file": "src/index.ts", "line": 1 }]
-}
-```
+**JSON** — Structured data powering the Interactive Explorer:
+- Files with symbols and imports, import graph with packages, modules, key symbols
 
 ## Development
 
