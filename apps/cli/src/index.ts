@@ -104,7 +104,6 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
     await mkdir(baseDir, { recursive: true });
     await mkdir(headDir, { recursive: true });
 
-    await execFileAsync("git", ["archive", base], { cwd: dir }).then(({ stdout }) => stdout);
     await execFileAsync("sh", ["-c", `git archive ${base} | tar -x -C ${baseDir}`], { cwd: dir });
     await execFileAsync("sh", ["-c", `git archive ${head} | tar -x -C ${headDir}`], { cwd: dir });
 
@@ -125,6 +124,9 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
     }, cache);
 
     const outputPath = outputDir ? join(outputDir, "DIFF.md") : join(dir, "DIFF.md");
+    if (outputDir) {
+      await mkdir(outputDir, { recursive: true });
+    }
 
     if (!config.aiProviderApiKey) {
       const baseFiles = new Set(baseContext.files.map((f) => f.path));
