@@ -10,13 +10,38 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Command } from "commander";
 import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
-import { createAIProvider, generateArchitectureSummary, generateTraceExplanation, generateDiffAnalysis } from "@repolens/ai";
+import { createAIProvider, generateArchitectureSummary, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@repolens/ai";
 import { errorMessage, readConfigFromEnv, createLogger, loadConfigFile, mergeConfig } from "@repolens/shared";
 
 const fs = { readFile: fsReadFile };
 
 const log = createLogger("repolens-cli");
 const execFileAsync = promisify(execFile);
+
+const FILE_SUMMARIZE_PROMPT = `Summarize this source file in 2-3 sentences. Focus on its purpose, key exports, and role in the codebase. Be specific and concise.`;
+
+function createFileSummarizeFn(provider: ReturnType<typeof createAIProvider>, model: string | undefined) {
+  const summarize = createSummarizeFn(provider, model ?? "gpt-4o-mini");
+  return async (filePath: string, content: string, symbols: Array<{name: string; kind: string; line: number}>, imports: string[]): Promise<string> => {
+    const symbolList = symbols.map(s => `${s.kind} ${s.name}`).join(", ");
+    const importList = imports.filter(i => i.startsWith(".")).join(", ");
+    const userPrompt = [
+      `File: ${filePath}`,
+      ``,
+      `Content:\n\`\`\`${filePath.split(".").pop()}\n${content.substring(0, 4000)}\n\`\`\``,
+      ``,
+      `Symbols: ${symbolList || "none"}`,
+      `Imports: ${importList || "none"}`,
+      ``,
+      `Summarize this file's purpose and role.`
+    ].join("\n");
+    try {
+      return await summarize([{ role: "system", content: FILE_SUMMARIZE_PROMPT }, { role: "user", content: userPrompt }]);
+    } catch {
+      return "";
+    }
+  };
+}
 
 async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }): Promise<void> {
   const envConfig = readConfigFromEnv();
@@ -27,6 +52,10 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
   const fileLevelGraph = options.fileLevel ?? false;
 
   log.info("scanning repository", { dir });
+
+  const aiSummarizeFn = options.summarize
+    ? createFileSummarizeFn(createAIProvider(config), config.aiProviderModel)
+    : undefined;
 
   const context = await scanRepository({
     rootDir: dir,
@@ -39,6 +68,7 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     include: options.include,
     exclude: options.exclude,
     summarize: options.summarize,
+    aiSummarizeFn,
     onProgress: (progress) => {
       process.stderr.write(`\r${formatProgress(progress)}`);
     }

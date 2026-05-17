@@ -3,3 +3,5 @@ dist/
 *.tsbuildinfo
 pnpm-lock.yaml
 .vite/
+.env
+.env.local

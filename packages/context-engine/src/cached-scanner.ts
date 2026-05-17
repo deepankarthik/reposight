@@ -13,6 +13,10 @@ import { getDirectoryProximityScore, getSamePackageScore } from "./proximity.js"
 import type { ProgressCallback } from "./progress.js";
 import { generateHeuristicSummary } from "./summary.js";
 
+interface FileSummaryFn {
+  (filePath: string, content: string, symbols: Array<{name: string; kind: string; line: number}>, imports: string[]): Promise<string>;
+}
+
 interface ScanRepositoryOptions {
   rootDir: string;
   files?: string[];
@@ -26,6 +30,7 @@ interface ScanRepositoryOptions {
   exclude?: string[];
   onProgress?: ProgressCallback;
   summarize?: boolean;
+  aiSummarizeFn?: FileSummaryFn;
 }
 
 function toSafeRelativePath(rootDir: string, filePath: string): string | undefined {
@@ -290,6 +295,25 @@ export async function scanRepository(options: ScanRepositoryOptions, cache: File
 
   const { files, totalBytes, truncated, skipped: readSkipped, cacheHits, cacheMisses } = await readFilesWithinBudget(sortedFiles, maxFiles, maxBytes, maxFileBytes, cache, onProgress);
   onProgress?.({ phase: "complete", discoveredFiles: discoveredFiles.length, processedFiles: files.length, totalFiles: files.length, bytesProcessed: totalBytes, totalBytes: maxBytes });
+
+  if (options.summarize && options.aiSummarizeFn && files.length > 0) {
+    onProgress?.({ phase: "ai-summarizing", discoveredFiles: discoveredFiles.length, processedFiles: 0, totalFiles: files.length, bytesProcessed: 0, totalBytes: maxBytes });
+    const aiConcurrency = 3;
+    let aiIndex = 0;
+    const aiWorkers = Array.from({ length: Math.min(aiConcurrency, files.length) }, async () => {
+      while (true) {
+        const idx = aiIndex++;
+        if (idx >= files.length) return;
+        const file = files[idx];
+        const aiSummary = await options.aiSummarizeFn!(file.path, file.content, file.symbols ?? [], file.imports ?? []);
+        if (aiSummary) {
+          file.summary = aiSummary;
+        }
+        onProgress?.({ phase: "ai-summarizing", discoveredFiles: discoveredFiles.length, processedFiles: idx + 1, totalFiles: files.length, bytesProcessed: 0, totalBytes: maxBytes });
+      }
+    });
+    await Promise.all(aiWorkers);
+  }
 
   const filesWithImports = files.map((f) => ({
     absolutePath: f.absolutePath ?? path.resolve(rootDir, f.path),

@@ -1,5 +1,5 @@
 export interface ScanProgress {
-  phase: "discovering" | "scoring" | "reading" | "complete";
+  phase: "discovering" | "scoring" | "reading" | "ai-summarizing" | "complete";
   discoveredFiles: number;
   processedFiles: number;
   totalFiles: number;
@@ -27,6 +27,7 @@ export function formatProgress(progress: ScanProgress): string {
     discovering: "Discovering files",
     scoring: "Scoring files",
     reading: "Reading files",
+    "ai-summarizing": "AI summarizing",
     complete: "Complete"
   };
 
