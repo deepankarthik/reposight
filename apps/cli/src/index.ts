@@ -220,4 +220,6 @@ program
     }
   });
 
+program.action(() => program.help());
+
 await program.parseAsync();
