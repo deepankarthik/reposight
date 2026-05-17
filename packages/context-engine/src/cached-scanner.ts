@@ -116,7 +116,7 @@ async function sortAndFilterFiles(
   rootDir: string,
   discoveredFiles: string[],
   targetFile?: string
-): Promise<{ absolutePath: string; relativePath: string }[]> {
+): Promise<{ absolutePath: string; relativePath: string; imports: string[]; score: number }[]> {
   const filesWithRelative = discoveredFiles
     .map((absolutePath) => ({ absolutePath, relativePath: path.relative(rootDir, absolutePath).split(path.sep).join("/") }))
     .filter(({ relativePath }) => !shouldIgnorePath(relativePath) && isLikelyTextFile(relativePath));
@@ -137,13 +137,11 @@ async function sortAndFilterFiles(
   const importGraph = buildImportGraph(filesWithImports);
   const recentFiles = await getRecentFiles(rootDir);
 
-  const scored = filesWithRelative.map((f) => ({
+  return filesWithRelative.map((f) => ({
     ...f,
+    imports: filesWithImports.find((fw) => fw.absolutePath === f.absolutePath)?.imports ?? [],
     score: computeHeuristicPriority(f.relativePath, f.absolutePath, importGraph, recentFiles, allRelativePaths, targetFile)
-  }));
-
-  return scored
-    .sort((a, b) => a.score - b.score || a.relativePath.localeCompare(b.relativePath));
+  })).sort((a, b) => a.score - b.score || a.relativePath.localeCompare(b.relativePath));
 }
 
 async function readFilesWithinBudget(

@@ -4,15 +4,17 @@ import { loadEnv } from "@repolens/shared";
 loadEnv(import.meta.url);
 
 import process from "node:process";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join, relative } from "node:path";
-import { execSync } from "node:child_process";
+import { writeFile, mkdir, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { Command } from "commander";
-import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram, buildImportGraph } from "@repolens/context-engine";
+import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram } from "@repolens/context-engine";
 import { createAIProvider, generateArchitectureSummary, generateTraceExplanation, generateDiffAnalysis } from "@repolens/ai";
 import { errorMessage, readConfigFromEnv, createLogger } from "@repolens/shared";
 
 const log = createLogger("repolens-cli");
+const execFileAsync = promisify(execFile);
 
 async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean }): Promise<void> {
   const config = readConfigFromEnv();
@@ -102,8 +104,9 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
     await mkdir(baseDir, { recursive: true });
     await mkdir(headDir, { recursive: true });
 
-    execSync(`git archive ${base} | tar -x -C ${baseDir}`, { cwd: dir, stdio: "pipe" });
-    execSync(`git archive ${head} | tar -x -C ${headDir}`, { cwd: dir, stdio: "pipe" });
+    await execFileAsync("git", ["archive", base], { cwd: dir }).then(({ stdout }) => stdout);
+    await execFileAsync("sh", ["-c", `git archive ${base} | tar -x -C ${baseDir}`], { cwd: dir });
+    await execFileAsync("sh", ["-c", `git archive ${head} | tar -x -C ${headDir}`], { cwd: dir });
 
     const baseContext = await scanRepository({
       rootDir: baseDir,
@@ -121,6 +124,8 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
       maxChunkChars: config.maxChunkChars
     }, cache);
 
+    const outputPath = outputDir ? join(outputDir, "DIFF.md") : join(dir, "DIFF.md");
+
     if (!config.aiProviderApiKey) {
       const baseFiles = new Set(baseContext.files.map((f) => f.path));
       const headFiles = new Set(headContext.files.map((f) => f.path));
@@ -132,7 +137,7 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
       const lines = [
         `# Diff: ${base} → ${head}`,
         "",
-        `## Summary`,
+        "## Summary",
         "",
         `- Added: ${added.length} files`,
         `- Removed: ${removed.length} files`,
@@ -143,32 +148,24 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
       if (added.length > 0) {
         lines.push("## Added Files", "", ...added.map((f) => `- \`${f}\``), "");
       }
-
       if (removed.length > 0) {
         lines.push("## Removed Files", "", ...removed.map((f) => `- \`${f}\``), "");
       }
-
       if (modified.length > 0) {
         lines.push("## Modified Files", "", ...modified.map((f) => `- \`${f}\``), "");
       }
 
-      const report = lines.join("\n");
-      const outputPath = outputDir ? join(outputDir, "DIFF.md") : join(dir, "DIFF.md");
-      await writeFile(outputPath, report, "utf8");
+      await writeFile(outputPath, lines.join("\n"), "utf8");
       log.info("wrote diff report (no AI)", { path: outputPath });
     } else {
       const provider = createAIProvider(config);
       const analysis = await generateDiffAnalysis(provider, baseContext, headContext, config.aiProviderModel);
-      const outputPath = outputDir ? join(outputDir, "DIFF.md") : join(dir, "DIFF.md");
       await writeFile(outputPath, `# Diff: ${base} → ${head}\n\n${analysis}`, "utf8");
       log.info("wrote diff report (AI)", { path: outputPath });
     }
   } finally {
-    try {
-      execSync(`rm -rf ${baseDir} ${headDir}`, { stdio: "pipe" });
-    } catch {
-      // cleanup best effort
-    }
+    await rm(baseDir, { recursive: true, force: true });
+    await rm(headDir, { recursive: true, force: true });
   }
 }
 
@@ -221,5 +218,4 @@ program
     }
   });
 
-const cleanArgs = process.argv.slice(2).filter((a) => a !== "--");
-await program.parseAsync(cleanArgs, { from: "user" });
+await program.parseAsync();

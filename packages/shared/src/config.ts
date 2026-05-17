@@ -11,7 +11,6 @@ export interface RepoLensConfig extends AIProviderConfig {
   maxContextFiles: number;
   maxContextBytes: number;
   maxTokenBudget: number;
-  outputFormat: "markdown" | "json";
   includeMermaid: boolean;
   maxFileBytes: number;
   maxChunkChars: number;
@@ -48,7 +47,6 @@ export function readConfigFromEnv(env: NodeJS.ProcessEnv = process.env): RepoLen
     maxContextFiles: envNumber(env, "REPOLENS_MAX_CONTEXT_FILES", 80),
     maxContextBytes: envNumber(env, "REPOLENS_MAX_CONTEXT_BYTES", 120_000),
     maxTokenBudget: envNumber(env, "REPOLENS_MAX_TOKEN_BUDGET", 100_000),
-    outputFormat: envValue(env, "REPOLENS_OUTPUT_FORMAT", "markdown") as "markdown" | "json",
     includeMermaid: env.REPOLENS_INCLUDE_MERMAID !== "false",
     maxFileBytes: envNumber(env, "REPOLENS_MAX_FILE_BYTES", 80_000),
     maxChunkChars: envNumber(env, "REPOLENS_MAX_CHUNK_CHARS", 6_000)

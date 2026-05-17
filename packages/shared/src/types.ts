@@ -37,7 +37,7 @@ export interface RepositoryContext {
     cacheMisses?: number;
   };
   importGraph?: {
-    nodes: Map<string, { absolutePath: string; relativePath: string; imports: string[]; importedBy: string[]; importCount: number }>;
+    nodes: Map<string, ImportGraphNode>;
   };
 }
 
@@ -47,26 +47,4 @@ export interface ImportGraphNode {
   imports: string[];
   importedBy: string[];
   importCount: number;
-}
-
-export interface ModuleInfo {
-  name: string;
-  files: string[];
-  importedBy: string[];
-  imports: string[];
-  symbolCount: number;
-}
-
-export interface TraceResult {
-  query: string;
-  files: string[];
-  flow: string[];
-  explanation: string;
-}
-
-export interface DiffReport {
-  added: string[];
-  removed: string[];
-  modified: string[];
-  summary: string;
 }

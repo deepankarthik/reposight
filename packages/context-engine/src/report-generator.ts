@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { RepositoryContext, ContextFile, ImportGraphNode } from "@repolens/shared";
+import type { RepositoryContext, ContextFile } from "@repolens/shared";
 import type { ImportGraph } from "./import-graph.js";
 
 interface ArchitectureSection {
@@ -25,43 +25,6 @@ function getPackageName(filePath: string): string {
 function getFileExtension(filePath: string): string {
   const ext = path.extname(filePath);
   return ext || "unknown";
-}
-
-function countSymbolsByKind(files: ContextFile[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const file of files) {
-    if (!file.symbols) continue;
-    for (const symbol of file.symbols) {
-      counts.set(symbol.kind, (counts.get(symbol.kind) ?? 0) + 1);
-    }
-  }
-  return counts;
-}
-
-function getTopImportedFiles(files: ContextFile[], importGraph?: ImportGraph, limit = 10): Array<{ path: string; importedBy: number }> {
-  if (importGraph) {
-    const results: Array<{ path: string; importedBy: number }> = [];
-    for (const [absPath, node] of importGraph.nodes) {
-      const relPath = node.relativePath;
-      const relFile = files.find((f) => f.path === relPath);
-      if (relFile) {
-        results.push({ path: relPath, importedBy: node.importCount });
-      }
-    }
-    return results.sort((a, b) => b.importedBy - a.importedBy).slice(0, limit);
-  }
-
-  const importCounts = new Map<string, number>();
-  for (const file of files) {
-    if (!file.imports) continue;
-    for (const imp of file.imports) {
-      importCounts.set(imp, (importCounts.get(imp) ?? 0) + 1);
-    }
-  }
-  return [...importCounts.entries()]
-    .map(([path, importedBy]) => ({ path, importedBy }))
-    .sort((a, b) => b.importedBy - a.importedBy)
-    .slice(0, limit);
 }
 
 function getEntryPoints(files: ContextFile[]): string[] {
@@ -124,17 +87,6 @@ function generateMermaidDependencyGraph(files: ContextFile[], fileLevel = false)
     }
   }
 
-  lines.push("```");
-  return lines.join("\n");
-}
-
-function generateMermaidSequenceDiagram(trace: { from: string; to: string; action: string }[]): string {
-  if (trace.length === 0) return "";
-
-  const lines = ["```mermaid", "sequenceDiagram"];
-  for (const t of trace) {
-    lines.push(`  ${t.from}->>${t.to}: ${t.action}`);
-  }
   lines.push("```");
   return lines.join("\n");
 }
