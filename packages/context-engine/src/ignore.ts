@@ -173,3 +173,35 @@ export function isTestFilePath(filePath: string): boolean {
   const normalized = filePath.split(path.sep).join("/");
   return testFilePatterns.some((pattern) => pattern.test(normalized));
 }
+
+let includePatterns: string[] = [];
+let excludePatterns: string[] = [];
+
+export function setIncludeExcludePatterns(include: string[], exclude: string[]): void {
+  includePatterns = include;
+  excludePatterns = exclude;
+}
+
+function matchesGlobPatterns(patterns: string[], normalizedPath: string): boolean {
+  if (patterns.length === 0) return false;
+
+  for (const pattern of patterns) {
+    const regex = gitignoreToRegex(pattern);
+    if (regex.test(normalizedPath)) return true;
+  }
+  return false;
+}
+
+export function shouldIncludePath(relativePath: string): boolean {
+  const normalized = relativePath.split(path.sep).join("/");
+
+  if (excludePatterns.length > 0 && matchesGlobPatterns(excludePatterns, normalized)) {
+    return false;
+  }
+
+  if (includePatterns.length > 0) {
+    return matchesGlobPatterns(includePatterns, normalized);
+  }
+
+  return true;
+}

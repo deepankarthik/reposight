@@ -38,6 +38,8 @@ export interface RepositoryContext {
   };
   importGraph?: {
     nodes: Map<string, ImportGraphNode>;
+    packages: Map<string, PackageInfo>;
+    externalDeps: Set<string>;
   };
 }
 
@@ -47,4 +49,10 @@ export interface ImportGraphNode {
   imports: string[];
   importedBy: string[];
   importCount: number;
+}
+
+export interface PackageInfo {
+  name: string;
+  location: string;
+  dependencies: string[];
 }

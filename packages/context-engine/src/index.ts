@@ -9,3 +9,7 @@ export * from "./proximity.js";
 export * from "./test-pairing.js";
 export * from "./cached-scanner.js";
 export * from "./report-generator.js";
+export * from "./diff-analyzer.js";
+export * from "./json-output.js";
+export * from "./progress.js";
+export * from "./symbol-crossref.js";

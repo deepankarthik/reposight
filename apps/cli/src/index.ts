@@ -4,20 +4,24 @@ import { loadEnv } from "@repolens/shared";
 loadEnv(import.meta.url);
 
 import process from "node:process";
-import { writeFile, mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { writeFile, mkdir, rm, readFile as fsReadFile } from "node:fs/promises";
+import path, { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Command } from "commander";
-import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram } from "@repolens/context-engine";
+import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
 import { createAIProvider, generateArchitectureSummary, generateTraceExplanation, generateDiffAnalysis } from "@repolens/ai";
-import { errorMessage, readConfigFromEnv, createLogger } from "@repolens/shared";
+import { errorMessage, readConfigFromEnv, createLogger, loadConfigFile, mergeConfig } from "@repolens/shared";
+
+const fs = { readFile: fsReadFile };
 
 const log = createLogger("repolens-cli");
 const execFileAsync = promisify(execFile);
 
-async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean }): Promise<void> {
-  const config = readConfigFromEnv();
+async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[] }): Promise<void> {
+  const envConfig = readConfigFromEnv();
+  const fileConfig = await loadConfigFile(dir);
+  const config = mergeConfig(fileConfig, envConfig);
   const cache = new FileCache();
   const includeMermaid = !options.noMermaid && config.includeMermaid;
   const fileLevelGraph = options.fileLevel ?? false;
@@ -30,8 +34,15 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     maxBytes: config.maxContextBytes,
     maxFileBytes: config.maxFileBytes,
     maxChunkChars: config.maxChunkChars,
-    ignoreTests: options.ignoreTests
+    ignoreTests: options.ignoreTests,
+    targetFile: options.targetFile ? path.resolve(dir, options.targetFile) : undefined,
+    include: options.include,
+    exclude: options.exclude,
+    onProgress: (progress) => {
+      process.stderr.write(`\r${formatProgress(progress)}`);
+    }
   }, cache);
+  process.stderr.write("\n");
 
   log.info("scan complete", {
     files: context.summary.includedFiles,
@@ -43,17 +54,27 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     await mkdir(outputDir, { recursive: true });
   }
 
-  const importGraph = context.importGraph ? { nodes: context.importGraph.nodes } : undefined;
-  const report = generateArchitectureReport(context, { includeMermaid, fileLevelGraph, importGraph });
-  const outputPath = outputDir ? join(outputDir, "ARCHITECTURE.md") : join(dir, "ARCHITECTURE.md");
-  await writeFile(outputPath, report, "utf8");
-  log.info("wrote architecture report", { path: outputPath });
+  const isJson = options.format === "json";
+  const reportExt = isJson ? "json" : "md";
+  const reportName = isJson ? "ARCHITECTURE.json" : "ARCHITECTURE.md";
+  const outputPath = outputDir ? join(outputDir, reportName) : join(dir, reportName);
 
-  if (includeMermaid) {
-    const diagram = generateMermaidDiagram(context, fileLevelGraph);
-    const diagramPath = outputDir ? join(outputDir, "DEPENDENCIES.mmd") : join(dir, "DEPENDENCIES.mmd");
-    await writeFile(diagramPath, diagram, "utf8");
-    log.info("wrote dependency diagram", { path: diagramPath });
+  if (isJson) {
+    const jsonReport = generateJsonReport(context, false);
+    await writeFile(outputPath, JSON.stringify(jsonReport, null, 2), "utf8");
+    log.info("wrote json report", { path: outputPath });
+  } else {
+    const importGraph = context.importGraph;
+    const report = generateArchitectureReport(context, { includeMermaid, fileLevelGraph, importGraph });
+    await writeFile(outputPath, report, "utf8");
+    log.info("wrote architecture report", { path: outputPath });
+
+    if (includeMermaid) {
+      const diagram = generateMermaidDiagram(context, fileLevelGraph);
+      const diagramPath = outputDir ? join(outputDir, "DEPENDENCIES.mmd") : join(dir, "DEPENDENCIES.mmd");
+      await writeFile(diagramPath, diagram, "utf8");
+      log.info("wrote dependency diagram", { path: diagramPath });
+    }
   }
 
   if (!options.noAi && config.aiProviderApiKey) {
@@ -67,7 +88,9 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
 }
 
 async function runTrace(dir: string, query: string): Promise<void> {
-  const config = readConfigFromEnv();
+  const envConfig = readConfigFromEnv();
+  const fileConfig = await loadConfigFile(dir);
+  const config = mergeConfig(fileConfig, envConfig);
   const cache = new FileCache();
 
   log.info("scanning repository for trace", { dir, query });
@@ -93,7 +116,9 @@ async function runTrace(dir: string, query: string): Promise<void> {
 }
 
 async function runDiff(dir: string, base: string, head: string, outputDir: string): Promise<void> {
-  const config = readConfigFromEnv();
+  const envConfig = readConfigFromEnv();
+  const fileConfig = await loadConfigFile(dir);
+  const config = mergeConfig(fileConfig, envConfig);
   const cache = new FileCache();
 
   log.info("running diff analysis", { dir, base, head });
@@ -129,42 +154,17 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
       await mkdir(outputDir, { recursive: true });
     }
 
+    const diffResult = await analyzeDiff(baseContext, headContext, baseDir, headDir);
+    const report = formatDiffReport(diffResult, base, head);
+
     if (!config.aiProviderApiKey) {
-      const baseFiles = new Set(baseContext.files.map((f) => f.path));
-      const headFiles = new Set(headContext.files.map((f) => f.path));
-
-      const added = [...headFiles].filter((f) => !baseFiles.has(f));
-      const removed = [...baseFiles].filter((f) => !headFiles.has(f));
-      const modified = [...headFiles].filter((f) => baseFiles.has(f));
-
-      const lines = [
-        `# Diff: ${base} → ${head}`,
-        "",
-        "## Summary",
-        "",
-        `- Added: ${added.length} files`,
-        `- Removed: ${removed.length} files`,
-        `- Modified: ${modified.length} files`,
-        ""
-      ];
-
-      if (added.length > 0) {
-        lines.push("## Added Files", "", ...added.map((f) => `- \`${f}\``), "");
-      }
-      if (removed.length > 0) {
-        lines.push("## Removed Files", "", ...removed.map((f) => `- \`${f}\``), "");
-      }
-      if (modified.length > 0) {
-        lines.push("## Modified Files", "", ...modified.map((f) => `- \`${f}\``), "");
-      }
-
-      await writeFile(outputPath, lines.join("\n"), "utf8");
-      log.info("wrote diff report (no AI)", { path: outputPath });
+      await writeFile(outputPath, report, "utf8");
+      log.info("wrote diff report", { path: outputPath });
     } else {
       const provider = createAIProvider(config);
       const analysis = await generateDiffAnalysis(provider, baseContext, headContext, config.aiProviderModel);
-      await writeFile(outputPath, `# Diff: ${base} → ${head}\n\n${analysis}`, "utf8");
-      log.info("wrote diff report (AI)", { path: outputPath });
+      await writeFile(outputPath, `${report}\n\n## AI Analysis\n\n${analysis}`, "utf8");
+      log.info("wrote diff report with AI analysis", { path: outputPath });
     }
   } finally {
     await rm(baseDir, { recursive: true, force: true });
@@ -186,9 +186,13 @@ program
   .option("--no-ai", "Skip AI-generated summary")
   .option("--file-level", "Generate file-level dependency graph instead of package-level")
   .option("--ignore-tests", "Exclude test files from scanning")
-  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean; ignoreTests?: boolean }) => {
+  .option("--target-file <path>", "Score files relative to this target (proximity, test-pairing, same-package)")
+  .option("-f, --format <format>", "Output format: markdown (default) or json")
+  .option("--include <patterns...>", "Only include files matching these glob patterns")
+  .option("--exclude <patterns...>", "Exclude files matching these glob patterns")
+  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[] }) => {
     try {
-      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests });
+      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude });
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
@@ -221,6 +225,42 @@ program
   .action(async (dir: string | undefined, options: { base: string; head: string; output?: string }) => {
     try {
       await runDiff(dir ?? ".", options.base, options.head, options.output ?? "");
+    } catch (error) {
+      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("init [dir]")
+  .description("Generate a .repolensrc.json configuration file")
+  .action(async (dir: string | undefined) => {
+    try {
+      const targetDir = dir ?? ".";
+      const configPath = join(targetDir, ".repolensrc.json");
+
+      try {
+        await fs.readFile(configPath, "utf8");
+        process.stderr.write(`repolens: ${configPath} already exists\n`);
+        process.exitCode = 1;
+        return;
+      } catch {
+        // File doesn't exist, proceed
+      }
+
+      const defaultConfig = {
+        maxContextFiles: 80,
+        maxContextBytes: 120000,
+        maxFileBytes: 80000,
+        maxChunkChars: 6000,
+        aiProviderModel: "gpt-4o-mini",
+        includeMermaid: true,
+        logLevel: "info"
+      };
+
+      await writeFile(configPath, JSON.stringify(defaultConfig, null, 2) + "\n", "utf8");
+      log.info("created config file", { path: configPath });
+      process.stdout.write(`Created ${configPath}\n`);
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;

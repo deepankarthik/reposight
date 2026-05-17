@@ -89,7 +89,9 @@ describe("generateArchitectureReport", () => {
             importCount: 0
           }
         ]
-      ])
+      ]),
+      packages: new Map(),
+      externalDeps: new Set<string>()
     };
     const report = generateArchitectureReport(context, { importGraph });
     expect(report).toContain("1");

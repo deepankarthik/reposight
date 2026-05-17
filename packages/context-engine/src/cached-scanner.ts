@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { ContextFile, RepositoryContext } from "@repolens/shared";
 import { chunkFile } from "./chunker.js";
-import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile } from "./ignore.js";
+import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile, setIncludeExcludePatterns, shouldIncludePath } from "./ignore.js";
 import { isLikelyTextFile, languageFromPath } from "./language.js";
 import { extractSymbols, extractImportsFromSource } from "./symbol-extractor.js";
 import { FileCache } from "./cache.js";
@@ -10,6 +10,7 @@ import { buildImportGraph, getImportScore, getTransitiveImportScore, type Import
 import { getRecentFiles, getRecencyScore, type RecentFileEntry, GIT_NOT_AVAILABLE } from "./git-recent.js";
 import { getTestPairScore, isTestFile, isSourceFile } from "./test-pairing.js";
 import { getDirectoryProximityScore, getSamePackageScore } from "./proximity.js";
+import type { ProgressCallback } from "./progress.js";
 
 interface ScanRepositoryOptions {
   rootDir: string;
@@ -20,6 +21,9 @@ interface ScanRepositoryOptions {
   maxChunkChars?: number;
   targetFile?: string;
   ignoreTests?: boolean;
+  include?: string[];
+  exclude?: string[];
+  onProgress?: ProgressCallback;
 }
 
 function toSafeRelativePath(rootDir: string, filePath: string): string | undefined {
@@ -124,6 +128,7 @@ async function sortAndFilterFiles(
     .filter(({ relativePath }) => {
       if (shouldIgnorePath(relativePath, { ignoreTests })) return false;
       if (isGeneratedFile(relativePath)) return false;
+      if (!shouldIncludePath(relativePath)) return false;
       return isLikelyTextFile(relativePath);
     });
 
@@ -143,7 +148,7 @@ async function sortAndFilterFiles(
   );
   filesWithImports.push(...importResults);
 
-  const importGraph = buildImportGraph(filesWithImports);
+  const importGraph = await buildImportGraph(filesWithImports, rootDir);
   const recentFiles = await getRecentFiles(rootDir);
 
   return filesWithRelative.map((f) => ({
@@ -158,7 +163,8 @@ async function readFilesWithinBudget(
   maxFiles: number,
   maxBytes: number,
   maxFileBytes: number,
-  cache: FileCache
+  cache: FileCache,
+  onProgress?: ProgressCallback
 ): Promise<{ files: ContextFile[]; totalBytes: number; truncated: boolean; skipped: number; cacheHits: number; cacheMisses: number }> {
   const files: ContextFile[] = [];
   let totalBytes = 0;
@@ -210,6 +216,7 @@ async function readFilesWithinBudget(
 
           totalBytes += contentBytes;
           cacheHits += 1;
+          onProgress?.({ phase: "reading", discoveredFiles: sortedFiles.length, processedFiles: files.length, totalFiles: sortedFiles.length, bytesProcessed: totalBytes, totalBytes: maxBytes });
           continue;
         }
 
@@ -242,6 +249,7 @@ async function readFilesWithinBudget(
 
         totalBytes += contentBytes;
         cacheMisses += 1;
+        onProgress?.({ phase: "reading", discoveredFiles: sortedFiles.length, processedFiles: files.length, totalFiles: sortedFiles.length, bytesProcessed: totalBytes, totalBytes: maxBytes });
       } catch {
         cache.invalidate(file.absolutePath);
         skipped += 1;
@@ -263,19 +271,26 @@ export async function scanRepository(options: ScanRepositoryOptions, cache: File
   const maxFileBytes = options.maxFileBytes ?? 80_000;
   const maxChunkChars = options.maxChunkChars ?? 6_000;
   const skipped = { count: 0 };
+  const onProgress = options.onProgress;
 
   loadIgnoreFiles(rootDir);
+  setIncludeExcludePatterns(options.include ?? [], options.exclude ?? []);
 
   const discoveredFiles = await discoverFiles(rootDir, options.files, skipped);
+  onProgress?.({ phase: "scoring", discoveredFiles: discoveredFiles.length, processedFiles: 0, totalFiles: discoveredFiles.length, bytesProcessed: 0, totalBytes: 0 });
+
   const sortedFiles = await sortAndFilterFiles(rootDir, discoveredFiles, options.targetFile, options.ignoreTests);
-  const { files, totalBytes, truncated, skipped: readSkipped, cacheHits, cacheMisses } = await readFilesWithinBudget(sortedFiles, maxFiles, maxBytes, maxFileBytes, cache);
+  onProgress?.({ phase: "reading", discoveredFiles: discoveredFiles.length, processedFiles: 0, totalFiles: sortedFiles.length, bytesProcessed: 0, totalBytes: maxBytes });
+
+  const { files, totalBytes, truncated, skipped: readSkipped, cacheHits, cacheMisses } = await readFilesWithinBudget(sortedFiles, maxFiles, maxBytes, maxFileBytes, cache, onProgress);
+  onProgress?.({ phase: "complete", discoveredFiles: discoveredFiles.length, processedFiles: files.length, totalFiles: files.length, bytesProcessed: totalBytes, totalBytes: maxBytes });
 
   const filesWithImports = files.map((f) => ({
     absolutePath: f.absolutePath ?? path.resolve(rootDir, f.path),
     relativePath: f.path,
     imports: f.imports ?? []
   }));
-  const importGraph = buildImportGraph(filesWithImports);
+  const importGraph = await buildImportGraph(filesWithImports, rootDir);
 
   return {
     rootDir,

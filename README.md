@@ -4,15 +4,19 @@
 
 ## Overview
 
-RepoLens is a CLI tool that scans a repository, extracts context (files, symbols, imports), scores files heuristically, and produces Markdown reports with Mermaid.js diagrams. An optional AI provider can generate architecture summaries and trace explanations.
+RepoLens is a CLI tool that scans a repository, extracts context (files, symbols, imports), scores files heuristically, and produces Markdown or JSON reports with Mermaid.js diagrams. An optional AI provider can generate architecture summaries, code flow traces, and diff analysis.
 
 ## Features
 
-- **Architecture Reports** — Markdown reports with Overview, Module Map, Key Symbols, and Mermaid dependency graphs
+- **Architecture Reports** — Markdown or JSON reports with Overview, Module Map, Key Symbols, and Mermaid dependency graphs
 - **Heuristic File Scoring** — Prioritizes important files using import graphs, git recency, test pairing, and directory proximity
-- **File Caching** — In-memory LRU cache with mtime-based invalidation for fast repeated scans
-- **Multi-language Support** — TypeScript/JavaScript symbol extraction via AST; Python support via regex patterns
+- **Multi-language Support** — TypeScript/JavaScript via AST; Python, Go, Rust, and Java via regex patterns
+- **Smart Filtering** — `.gitignore`/`.repolensignore` with negation, anchoring, and `**` globbing; `--include`/`--exclude` patterns; `--ignore-tests` flag; automatic generated file detection
+- **Content-level Diffs** — Unified diffs, symbol additions/removals, and import changes between git refs
+- **Symbol Cross-referencing** — Track which symbols reference which across files
+- **File Caching** — In-memory LRU cache with mtime-based invalidation
 - **AI Integration** — Optional AI-generated architecture summaries, code flow tracing, and diff analysis
+- **Progress Reporting** — Real-time scan progress feedback
 - **SSRF Protection** — Remote AI provider validates URLs against allowlisted domains and blocked ports
 
 ## Quick Start
@@ -24,14 +28,20 @@ pnpm install
 # Build all packages
 pnpm run build
 
+# Generate a config file
+pnpm dev:cli init /path/to/repo
+
 # Scan a repository
 pnpm dev:cli scan /path/to/repo
 
-# Scan with output directory
-pnpm dev:cli scan /path/to/repo -o ./docs
+# Scan with JSON output
+pnpm dev:cli scan /path/to/repo -f json
 
-# Scan with file-level dependency graph
-pnpm dev:cli scan /path/to/repo --file-level
+# Scan specific files only
+pnpm dev:cli scan /path/to/repo --include "src/**/*.ts" --exclude "**/*.test.ts"
+
+# Scan relative to a target file
+pnpm dev:cli scan /path/to/repo --target-file src/auth.ts
 
 # Trace code flow (requires AI API key)
 pnpm dev:cli trace /path/to/repo "how does authentication work?"
@@ -42,29 +52,37 @@ pnpm dev:cli diff /path/to/repo --base main --head feature-branch
 
 ## Commands
 
-### `scan <dir>`
+### `scan [dir]`
 
 Scan a repository and generate architecture documentation.
 
 | Option | Description |
 |--------|-------------|
 | `-o, --output <dir>` | Output directory (defaults to repo root) |
+| `-f, --format <format>` | Output format: `markdown` (default) or `json` |
 | `--no-mermaid` | Skip Mermaid diagram generation |
 | `--no-ai` | Skip AI-generated summary |
 | `--file-level` | Generate file-level dependency graph instead of package-level |
+| `--ignore-tests` | Exclude test files from scanning |
+| `--target-file <path>` | Score files relative to this target (proximity, test-pairing, same-package) |
+| `--include <patterns...>` | Only include files matching these glob patterns |
+| `--exclude <patterns...>` | Exclude files matching these glob patterns |
 
-**Outputs:**
+**Outputs (Markdown):**
 - `ARCHITECTURE.md` — Full architecture report
 - `DEPENDENCIES.mmd` — Standalone Mermaid dependency diagram
 - `AI_SUMMARY.md` — AI-generated architecture summary (if API key configured)
 
-### `trace <dir> <query>`
+**Outputs (JSON):**
+- `ARCHITECTURE.json` — Structured JSON with files, symbols, imports, import graph, modules, and key symbols
+
+### `trace [dir] [query]`
 
 Trace code flow through a repository using AI. Requires `AI_PROVIDER_API_KEY`.
 
-### `diff <dir>`
+### `diff [dir]`
 
-Compare two git refs and analyze changes.
+Compare two git refs and analyze changes with content-level diffs, symbol tracking, and import analysis.
 
 | Option | Description |
 |--------|-------------|
@@ -73,7 +91,30 @@ Compare two git refs and analyze changes.
 | `-o, --output <dir>` | Output directory (defaults to repo root) |
 
 **Outputs:**
-- `DIFF.md` — Structural diff report (or AI analysis if API key configured)
+- `DIFF.md` — Content-level diff report with unified diffs, symbol additions/removals, and import changes (or AI analysis if API key configured)
+
+### `init [dir]`
+
+Generate a `.repolensrc.json` configuration file with sensible defaults.
+
+## Configuration
+
+RepoLens can be configured via environment variables or a `.repolensrc.json` file in the repository root. Config file values are overridden by environment variables.
+
+Generate a config file with `repolens init /path/to/repo`.
+
+Example `.repolensrc.json`:
+```json
+{
+  "maxContextFiles": 100,
+  "maxContextBytes": 150000,
+  "maxFileBytes": 80000,
+  "maxChunkChars": 6000,
+  "aiProviderModel": "claude-3-sonnet",
+  "includeMermaid": true,
+  "logLevel": "info"
+}
+```
 
 ## Environment Variables
 
@@ -88,7 +129,6 @@ Compare two git refs and analyze changes.
 | `REPOLENS_MAX_FILE_BYTES` | `80000` | Max bytes per individual file |
 | `REPOLENS_MAX_CHUNK_CHARS` | `6000` | Max characters per chunk |
 | `REPOLENS_MAX_TOKEN_BUDGET` | `100000` | Max token budget for conversations |
-| `REPOLENS_OUTPUT_FORMAT` | `markdown` | `markdown` or `json` |
 | `REPOLENS_INCLUDE_MERMAID` | `true` | Include Mermaid diagrams |
 
 ## Project Structure
@@ -97,10 +137,13 @@ Compare two git refs and analyze changes.
 repolens/
 ├── packages/
 │   ├── shared/           # Core types, config, errors, logger, token budget
-│   ├── context-engine/   # Scanner, cache, symbol extractor, import graph, report generator
+│   ├── context-engine/   # Scanner, cache, symbol extractor, import graph, diff analyzer, JSON output, progress
 │   └── ai/               # AI provider factory, remote/local providers, doc generator
 ├── apps/
-│   └── cli/              # CLI with scan, trace, and diff commands
+│   └── cli/              # CLI with scan, trace, diff, and init commands
+├── .github/
+│   └── workflows/
+│       └── ci.yml        # GitHub Actions CI
 ├── package.json
 ├── pnpm-workspace.yaml
 └── tsconfig.json
@@ -116,6 +159,17 @@ apps/cli
 └── @repolens/ai
     └── @repolens/shared
 ```
+
+## Ignore Files & Filtering
+
+RepoLens respects `.gitignore` and `.repolensignore` files with full support for:
+- Negation patterns (`!pattern` to un-ignore)
+- Root anchoring (`/pattern` to match only at root)
+- Recursive globbing (`**` to match any depth)
+
+Additionally, generated files are automatically excluded (`.pb.*`, `.gen.*`, `_generated`, `.d.ts`, `.swagger.ts`, etc.).
+
+Use `--ignore-tests` to exclude test files, or `--include`/`--exclude` for fine-grained glob patterns.
 
 ## Heuristic File Scoring
 
@@ -143,12 +197,30 @@ score = base * 10 + importScore * 2 + recencyScore * 3 + testPairScore * 4 + pro
 
 ## Output Format
 
+### Markdown
+
 Reports are generated in **Markdown** with embedded Mermaid.js diagrams (renderable in GitHub, VS Code, etc.):
 
 - **Overview** — File count, total bytes, languages, entry points
 - **Module Map** — Modules with file count, symbol count, and imported-by references
 - **Key Symbols** — Top 15 symbols by import count with location
 - **Dependency Graph** — Mermaid `graph TD` diagram (package-level or file-level)
+
+### JSON
+
+Use `-f json` for structured output suitable for programmatic consumption:
+
+```json
+{
+  "version": "0.1.0",
+  "summary": { "rootDir": "...", "scannedFiles": 100, "includedFiles": 80, "totalBytes": 120000 },
+  "files": [{ "path": "src/index.ts", "language": "typescript", "symbols": [...], "imports": [...] }],
+  "importGraph": { "nodes": [...], "packages": [...], "externalDeps": [...] },
+  "entryPoints": ["src/index.ts"],
+  "modules": [{ "name": "src", "files": [...], "symbolCount": 10 }],
+  "keySymbols": [{ "kind": "function", "name": "main", "file": "src/index.ts", "line": 1 }]
+}
+```
 
 ## Development
 

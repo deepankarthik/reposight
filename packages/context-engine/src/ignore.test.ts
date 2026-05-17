@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile, isTestFilePath } from "./ignore.js";
+import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile, isTestFilePath, setIncludeExcludePatterns, shouldIncludePath } from "./ignore.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -203,5 +203,44 @@ describe("loadIgnoreFiles", () => {
     expect(shouldIgnorePath("temp/file.txt")).toBe(true);
     expect(shouldIgnorePath("src/temp/file.txt")).toBe(true);
     expect(shouldIgnorePath("a/b/c/temp/file.txt")).toBe(true);
+  });
+});
+
+describe("include/exclude patterns", () => {
+  beforeEach(() => {
+    setIncludeExcludePatterns([], []);
+  });
+
+  it("includes all files when no patterns set", () => {
+    expect(shouldIncludePath("src/index.ts")).toBe(true);
+    expect(shouldIncludePath("test/foo.test.ts")).toBe(true);
+  });
+
+  it("excludes files matching exclude patterns", () => {
+    setIncludeExcludePatterns([], ["*.test.ts", "*.spec.ts"]);
+    expect(shouldIncludePath("src/index.ts")).toBe(true);
+    expect(shouldIncludePath("test/foo.test.ts")).toBe(false);
+    expect(shouldIncludePath("test/bar.spec.ts")).toBe(false);
+  });
+
+  it("only includes files matching include patterns", () => {
+    setIncludeExcludePatterns(["src/**/*.ts"], []);
+    expect(shouldIncludePath("src/index.ts")).toBe(true);
+    expect(shouldIncludePath("src/utils/helper.ts")).toBe(true);
+    expect(shouldIncludePath("test/foo.test.ts")).toBe(false);
+    expect(shouldIncludePath("docs/readme.md")).toBe(false);
+  });
+
+  it("exclude takes precedence over include", () => {
+    setIncludeExcludePatterns(["src/**/*.ts"], ["src/generated/*.ts"]);
+    expect(shouldIncludePath("src/index.ts")).toBe(true);
+    expect(shouldIncludePath("src/generated/api.ts")).toBe(false);
+  });
+
+  it("handles directory patterns", () => {
+    setIncludeExcludePatterns([], ["node_modules/**", "dist/**"]);
+    expect(shouldIncludePath("node_modules/foo/index.js")).toBe(false);
+    expect(shouldIncludePath("dist/bundle.js")).toBe(false);
+    expect(shouldIncludePath("src/index.ts")).toBe(true);
   });
 });
