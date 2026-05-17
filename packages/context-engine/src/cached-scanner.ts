@@ -180,7 +180,6 @@ async function readFilesWithinBudget(
       }
 
       const file = sortedFiles[currentIndex];
-      const remainingBytes = Math.max(0, maxBytes - totalBytes);
 
       try {
         const stat = await fs.stat(file.absolutePath);
@@ -192,7 +191,7 @@ async function readFilesWithinBudget(
         const cached = cache.get(file.absolutePath, stat.mtimeMs, stat.size);
         if (cached) {
           const contentBytes = Buffer.byteLength(cached.content, "utf8");
-          if (contentBytes > remainingBytes) {
+          if (totalBytes + contentBytes > maxBytes || files.length >= maxFiles) {
             truncated = true;
             continue;
           }
@@ -216,12 +215,18 @@ async function readFilesWithinBudget(
 
         const raw = await fs.readFile(file.absolutePath, "utf8");
         const rawBuffer = Buffer.from(raw, "utf8");
-        const content = rawBuffer.length > remainingBytes
-          ? rawBuffer.subarray(0, remainingBytes).toString("utf8")
+        const content = rawBuffer.length > Math.max(0, maxBytes - totalBytes)
+          ? rawBuffer.subarray(0, Math.max(0, maxBytes - totalBytes)).toString("utf8")
           : raw;
         const language = languageFromPath(file.relativePath);
         const symbols = extractSymbols(content, language);
         const imports = extractImportsFromSource(content, language);
+
+        const contentBytes = Buffer.byteLength(content, "utf8");
+        if (contentBytes === 0 || files.length >= maxFiles) {
+          truncated = true;
+          continue;
+        }
 
         cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols);
 
@@ -235,7 +240,7 @@ async function readFilesWithinBudget(
           imports
         });
 
-        totalBytes += Buffer.byteLength(content, "utf8");
+        totalBytes += contentBytes;
         cacheMisses += 1;
       } catch {
         cache.invalidate(file.absolutePath);
