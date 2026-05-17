@@ -42,7 +42,7 @@ function getLineContent(source: string, lines: string[], index: number): string 
   for (let i = 0; i < index && i < source.length; i++) {
     if (source[i] === "\n") lineNum++;
   }
-  while (lineNum < lines.length && lines[lineNum].trim() === "") {
+  if (lineNum < lines.length && lines[lineNum].trim() === "" && lineNum + 1 < lines.length) {
     lineNum++;
   }
   return lines[lineNum] || "";
@@ -177,7 +177,7 @@ function extractGoImports(source: string): string[] {
 
 function extractRustSymbols(source: string): CodeSymbol[] {
   const symbols: CodeSymbol[] = [];
-  const implStack: Array<{ name: string; indent: number }> = [];
+  const implBlocks: Array<{ name: string; indent: number; startPos: number }> = [];
   const lines = source.split("\n");
 
   let match: RegExpExecArray | null;
@@ -209,18 +209,19 @@ function extractRustSymbols(source: string): CodeSymbol[] {
     const lineNum = getLineNumber(source, match.index);
     const lineContent = getLineContent(source, lines, match.index);
     const indent = countLeadingSpaces(lineContent);
-    implStack.push({ name, indent });
+    implBlocks.push({ name, indent, startPos: match.index });
   }
 
   while ((match = RUST_FN_RE.exec(source)) !== null) {
     if (symbols.length >= MAX_SYMBOLS) break;
     const name = match[1];
-    const lineNum = getLineNumber(source, match.index);
-    const lineContent = getLineContent(source, lines, match.index);
+    const fnIndex = match.index;
+    const lineNum = getLineNumber(source, fnIndex);
+    const lineContent = getLineContent(source, lines, fnIndex);
     const indent = countLeadingSpaces(lineContent);
 
-    const inImpl = implStack.length > 0 && implStack[implStack.length - 1].indent <= indent;
-    const kind = inImpl ? "method" : "function";
+    const parentImpl = [...implBlocks].reverse().find((impl) => impl.startPos < fnIndex && impl.indent < indent);
+    const kind = parentImpl ? "method" : "function";
     symbols.push({ name, kind, line: lineNum });
   }
 

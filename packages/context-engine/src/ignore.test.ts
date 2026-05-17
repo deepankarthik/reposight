@@ -181,4 +181,27 @@ describe("loadIgnoreFiles", () => {
     loadIgnoreFiles(tmpDir);
     expect(shouldIgnorePath("debug.log")).toBe(true);
   });
+
+  it("should handle negation patterns", () => {
+    fs.writeFileSync(path.join(tmpDir, ".gitignore"), "*.tmp\n!important.tmp\n");
+    loadIgnoreFiles(tmpDir);
+    expect(shouldIgnorePath("debug.tmp")).toBe(true);
+    expect(shouldIgnorePath("error.tmp")).toBe(true);
+    expect(shouldIgnorePath("important.tmp")).toBe(false);
+  });
+
+  it("should handle anchored patterns", () => {
+    fs.writeFileSync(path.join(tmpDir, ".gitignore"), "/output\n");
+    loadIgnoreFiles(tmpDir);
+    expect(shouldIgnorePath("output/file.txt")).toBe(true);
+    expect(shouldIgnorePath("src/output/file.txt")).toBe(false);
+  });
+
+  it("should handle double-asterisk patterns", () => {
+    fs.writeFileSync(path.join(tmpDir, ".gitignore"), "**/temp\n");
+    loadIgnoreFiles(tmpDir);
+    expect(shouldIgnorePath("temp/file.txt")).toBe(true);
+    expect(shouldIgnorePath("src/temp/file.txt")).toBe(true);
+    expect(shouldIgnorePath("a/b/c/temp/file.txt")).toBe(true);
+  });
 });

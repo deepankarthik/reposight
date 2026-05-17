@@ -168,108 +168,85 @@ async function readFilesWithinBudget(
   let cacheMisses = 0;
 
   const concurrencyLimit = 10;
-  const batches: { absolutePath: string; relativePath: string }[][] = [];
-  for (let i = 0; i < sortedFiles.length; i += concurrencyLimit) {
-    batches.push(sortedFiles.slice(i, i + concurrencyLimit));
-  }
+  let nextIndex = 0;
 
-  for (const batch of batches) {
-    if (files.length >= maxFiles || totalBytes >= maxBytes) {
-      truncated = true;
-      break;
-    }
+  async function processNext(): Promise<void> {
+    while (true) {
+      const currentIndex = nextIndex++;
+      if (currentIndex >= sortedFiles.length) return;
+      if (files.length >= maxFiles || totalBytes >= maxBytes) {
+        truncated = true;
+        return;
+      }
 
-    const results = await Promise.allSettled(
-      batch.map(async (file) => {
-        if (files.length >= maxFiles || totalBytes >= maxBytes) return null;
+      const file = sortedFiles[currentIndex];
+      const remainingBytes = Math.max(0, maxBytes - totalBytes);
 
-        const remainingBytes = Math.max(0, maxBytes - totalBytes);
-        if (remainingBytes === 0) return null;
-
-        try {
-          const stat = await fs.stat(file.absolutePath);
-          if (stat.size > maxFileBytes) {
-            return { truncated: true, file: null };
-          }
-
-          const cached = cache.get(file.absolutePath, stat.mtimeMs, stat.size);
-          if (cached) {
-            const contentBytes = Buffer.byteLength(cached.content, "utf8");
-            if (contentBytes > remainingBytes) {
-              return { truncated: true, file: null };
-            }
-
-            const imports = extractImportsFromSource(cached.content, languageFromPath(file.relativePath));
-
-            return {
-              truncated: false,
-              file: {
-                path: file.relativePath,
-                absolutePath: file.absolutePath,
-                language: languageFromPath(file.relativePath),
-                content: cached.content,
-                size: stat.size,
-                symbols: cached.symbols,
-                imports
-              },
-              contentBytes
-            };
-          }
-
-          const raw = await fs.readFile(file.absolutePath, "utf8");
-          const rawBuffer = Buffer.from(raw, "utf8");
-          const content = rawBuffer.length > remainingBytes
-            ? rawBuffer.subarray(0, remainingBytes).toString("utf8")
-            : raw;
-          const language = languageFromPath(file.relativePath);
-          const symbols = extractSymbols(content, language);
-          const imports = extractImportsFromSource(content, language);
-
-          cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols);
-
-          return {
-            truncated: false,
-            file: {
-              path: file.relativePath,
-              absolutePath: file.absolutePath,
-              language,
-              content,
-              size: stat.size,
-              symbols,
-              imports
-            },
-            contentBytes: Buffer.byteLength(content, "utf8")
-          };
-        } catch {
-          cache.invalidate(file.absolutePath);
-          return { skipped: true, file: null };
-        }
-      })
-    );
-
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value) {
-        if (result.value.truncated) {
+      try {
+        const stat = await fs.stat(file.absolutePath);
+        if (stat.size > maxFileBytes) {
           truncated = true;
           continue;
         }
-        if (result.value.skipped) {
-          skipped += 1;
-          truncated = true;
+
+        const cached = cache.get(file.absolutePath, stat.mtimeMs, stat.size);
+        if (cached) {
+          const contentBytes = Buffer.byteLength(cached.content, "utf8");
+          if (contentBytes > remainingBytes) {
+            truncated = true;
+            continue;
+          }
+
+          const imports = extractImportsFromSource(cached.content, languageFromPath(file.relativePath));
+
+          files.push({
+            path: file.relativePath,
+            absolutePath: file.absolutePath,
+            language: languageFromPath(file.relativePath),
+            content: cached.content,
+            size: stat.size,
+            symbols: cached.symbols,
+            imports
+          });
+
+          totalBytes += contentBytes;
+          cacheHits += 1;
           continue;
         }
-        if (result.value.file) {
-          files.push(result.value.file);
-          totalBytes += result.value.contentBytes;
-          if (cache.get(result.value.file.absolutePath, 0, 0)) {
-            cacheHits += 1;
-          } else {
-            cacheMisses += 1;
-          }
-        }
+
+        const raw = await fs.readFile(file.absolutePath, "utf8");
+        const rawBuffer = Buffer.from(raw, "utf8");
+        const content = rawBuffer.length > remainingBytes
+          ? rawBuffer.subarray(0, remainingBytes).toString("utf8")
+          : raw;
+        const language = languageFromPath(file.relativePath);
+        const symbols = extractSymbols(content, language);
+        const imports = extractImportsFromSource(content, language);
+
+        cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols);
+
+        files.push({
+          path: file.relativePath,
+          absolutePath: file.absolutePath,
+          language,
+          content,
+          size: stat.size,
+          symbols,
+          imports
+        });
+
+        totalBytes += Buffer.byteLength(content, "utf8");
+        cacheMisses += 1;
+      } catch {
+        cache.invalidate(file.absolutePath);
+        skipped += 1;
+        truncated = true;
       }
     }
   }
+
+  const workers = Array.from({ length: Math.min(concurrencyLimit, sortedFiles.length) }, () => processNext());
+  await Promise.all(workers);
 
   return { files, totalBytes, truncated, skipped, cacheHits, cacheMisses };
 }

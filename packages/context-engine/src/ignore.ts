@@ -51,15 +51,6 @@ const generatedFilePatterns = [
   /\.graphql\.gen\.(ts|tsx|js)$/,
   /\.mock\.(ts|tsx|js)$/,
   /\.fixture\.(ts|tsx|js)$/,
-  /\.spec\.(ts|tsx|js|py|go|rs)$/,
-  /\.test\.(ts|tsx|js|py|go|rs)$/,
-  /_test\.(go|py|rs)$/,
-  /_test\.go$/,
-  /_spec\.rb$/,
-  /\.spec\.java$/,
-  /Test\.java$/,
-  /Tests\.java$/,
-  /_test\.java$/,
 ];
 
 const testFilePatterns = [
@@ -74,24 +65,63 @@ const testFilePatterns = [
   /\/tests?\//,
 ];
 
-let gitignorePatterns: RegExp[] = [];
-let repolensignorePatterns: RegExp[] = [];
+interface IgnorePattern {
+  regex: RegExp;
+  negated: boolean;
+}
 
-function parseIgnoreFile(content: string): RegExp[] {
-  return content
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith("#"))
-    .map((pattern) => {
-      const escaped = pattern
-        .replace(/\./g, "\\.")
-        .replace(/\*/g, ".*")
-        .replace(/\?/g, ".");
-      if (escaped.endsWith("/")) {
-        return new RegExp(`(^|/)${escaped}.*`);
-      }
-      return new RegExp(`(^|/)${escaped}(/|$)`);
-    });
+let gitignorePatterns: IgnorePattern[] = [];
+let repolensignorePatterns: IgnorePattern[] = [];
+
+function gitignoreToRegex(pattern: string): RegExp {
+  const hasSlash = pattern.includes("/");
+  const isDir = pattern.endsWith("/");
+  const isAnchored = pattern.startsWith("/");
+
+  let core = pattern
+    .replace(/^\//, "")
+    .replace(/\/$/, "")
+    .replace(/\./g, "\\.")
+    .replace(/\+/g, "\\+")
+    .replace(/\?/g, "[^/]")
+    .replace(/\*\*\//g, "(.+/)?")
+    .replace(/\*/g, "[^/]*");
+
+  if (isAnchored || hasSlash) {
+    if (isDir) {
+      return new RegExp(`^${core}/`);
+    }
+    return new RegExp(`^${core}(/|$)`);
+  }
+
+  if (isDir) {
+    return new RegExp(`(^|/)${core}/`);
+  }
+  return new RegExp(`(^|/)${core}(/|$)`);
+}
+
+function parseIgnoreFile(content: string): IgnorePattern[] {
+  const patterns: IgnorePattern[] = [];
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const negated = trimmed.startsWith("!");
+    const pattern = negated ? trimmed.slice(1) : trimmed;
+    const regex = gitignoreToRegex(pattern);
+    patterns.push({ regex, negated });
+  }
+  return patterns;
+}
+
+function matchesPatterns(patterns: IgnorePattern[], normalizedPath: string): boolean {
+  let result = false;
+  for (const { regex, negated } of patterns) {
+    if (regex.test(normalizedPath)) {
+      result = !negated;
+    }
+  }
+  return result;
 }
 
 export function loadIgnoreFiles(rootDir: string): void {
@@ -128,13 +158,8 @@ export function shouldIgnorePath(relativePath: string, options?: { ignoreTests?:
 
   if (options?.ignoreTests && testFilePatterns.some((pattern) => pattern.test(normalized))) return true;
 
-  for (const pattern of gitignorePatterns) {
-    if (pattern.test(normalized)) return true;
-  }
-
-  for (const pattern of repolensignorePatterns) {
-    if (pattern.test(normalized)) return true;
-  }
+  if (matchesPatterns(gitignorePatterns, normalized)) return true;
+  if (matchesPatterns(repolensignorePatterns, normalized)) return true;
 
   return false;
 }
