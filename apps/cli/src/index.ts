@@ -178,13 +178,18 @@ program
   .version("0.1.0");
 
 program
-  .command("scan <dir>")
+  .command("scan [dir]")
   .description("Scan a repository and generate architecture documentation")
   .option("-o, --output <dir>", "Output directory (defaults to repo root)")
   .option("--no-mermaid", "Skip Mermaid diagram generation")
   .option("--no-ai", "Skip AI-generated summary")
   .option("--file-level", "Generate file-level dependency graph instead of package-level")
-  .action(async (dir: string, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean }) => {
+  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean }) => {
+    if (!dir) {
+      process.stderr.write("repolens: missing required argument 'dir'\n");
+      process.exitCode = 1;
+      return;
+    }
     try {
       await runScan(dir, options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel });
     } catch (error) {
@@ -194,9 +199,14 @@ program
   });
 
 program
-  .command("trace <dir> <query>")
+  .command("trace [dir] [query]")
   .description("Trace code flow through a repository")
-  .action(async (dir: string, query: string) => {
+  .action(async (dir: string | undefined, query: string | undefined) => {
+    if (!dir || !query) {
+      process.stderr.write("repolens: missing required arguments 'dir' and 'query'\n");
+      process.exitCode = 1;
+      return;
+    }
     try {
       await runTrace(dir, query);
     } catch (error) {
@@ -206,12 +216,17 @@ program
   });
 
 program
-  .command("diff <dir>")
+  .command("diff [dir]")
   .description("Compare two git refs and analyze changes")
   .requiredOption("--base <ref>", "Base git ref (e.g., main)")
   .option("--head <ref>", "Head git ref (defaults to HEAD)", "HEAD")
   .option("-o, --output <dir>", "Output directory (defaults to repo root)")
-  .action(async (dir: string, options: { base: string; head: string; output?: string }) => {
+  .action(async (dir: string | undefined, options: { base: string; head: string; output?: string }) => {
+    if (!dir) {
+      process.stderr.write("repolens: missing required argument 'dir'\n");
+      process.exitCode = 1;
+      return;
+    }
     try {
       await runDiff(dir, options.base, options.head, options.output ?? "");
     } catch (error) {
