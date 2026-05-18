@@ -93,6 +93,57 @@ The web UI (`apps/web/public/index.html`) provides a visual way to explore any c
 
 **No server required** — open `index.html` directly in your browser. It reads `ARCHITECTURE.json` from the same directory.
 
+## AI Usage
+
+RepoLens works **fully without AI** by default. AI is an optional enhancement.
+
+### When AI is Used
+
+AI is only invoked when you explicitly pass the `--summarize` flag:
+
+```bash
+repolens scan . --summarize
+```
+
+This sends each file's content (truncated to 4000 chars), symbols, and imports to your configured AI provider to generate a per-file summary. These summaries appear in `ARCHITECTURE.json` and the web UI.
+
+### When AI is NOT Used
+
+Everything else runs locally with zero AI calls:
+- File discovery and scoring
+- Symbol extraction (AST/regex)
+- Import graph building
+- Heuristic summaries (generated from path patterns, symbol names, and imports)
+- Diff analysis between git refs
+- Web UI rendering
+
+### Disabling AI
+
+AI is **off by default**. To ensure it stays off:
+- Don't pass `--summarize`
+- Don't set `AI_PROVIDER_API_KEY` (without a key, the local dev provider is used which simulates responses)
+- Pass `--no-ai` to skip the AI summary step entirely (even if `--summarize` was passed)
+
+```bash
+# Guaranteed no AI calls
+repolens scan . --no-ai
+
+# Or just don't pass --summarize
+repolens scan .
+```
+
+### AI Provider Configuration
+
+If you want AI summaries, set these variables:
+
+```bash
+export AI_PROVIDER_API_KEY=sk-your-key
+export AI_PROVIDER_BASE_URL=https://api.openai.com/v1  # or any OpenAI-compatible endpoint
+export AI_PROVIDER_MODEL=gpt-4o-mini
+```
+
+Supported providers: OpenAI, Anthropic, Groq, Together, DeepSeek, OpenRouter, or any OpenAI-compatible API.
+
 ## Configuration
 
 Create a `.repolensrc.json` in your repo root:
@@ -148,8 +199,6 @@ pnpm run build
 pnpm test
 pnpm dev:cli scan .
 ```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Security
 
