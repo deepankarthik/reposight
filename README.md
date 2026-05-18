@@ -101,18 +101,6 @@ Automatically generate and update architecture documentation on every push and p
 Add `.github/workflows/repolens.yml` to your repo:
 
 ```yaml
-name: RepoLens
-
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   repolens:
     runs-on: ubuntu-latest
@@ -124,8 +112,10 @@ jobs:
         with:
           commit: true      # Auto-commit ARCHITECTURE.json
           comment: true     # Post PR comment with changes
-          summarize: false  # Set true for AI summaries (requires AI_PROVIDER_API_KEY)
+          summarize: false  # Set true for AI summaries (requires AI_PROVIDER_API_KEY secret)
 ```
+
+**AI summaries are delta-only** — when `summarize: true`, only changed files get AI summaries. Unchanged files keep their existing summaries. This keeps API costs low even on large repos. Set `AI_PROVIDER_API_KEY` as a repo secret to enable.
 
 **What it does:**
 - **On push:** Scans the repo, updates `ARCHITECTURE.json`, and commits it back. Preserves existing AI summaries.

@@ -2,6 +2,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import * as exec from "@actions/exec";
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -142,17 +143,88 @@ function formatDiffComment(baseReport: JsonReport, headReport: JsonReport, baseR
   return lines.join("\n");
 }
 
-async function runScan(summarize: boolean): Promise<string> {
-  const output = join(core.getInput("output-dir"), "ARCHITECTURE.json");
-  const args = ["scan", ".", "-f", "json", "-o", core.getInput("output-dir")];
-  if (summarize) args.push("--summarize");
+async function runScan(): Promise<string> {
+  const outputDir = core.getInput("output-dir");
+  const args = ["scan", ".", "-f", "json", "-o", outputDir];
   if (core.getInput("include-mermaid") !== "true") args.push("--no-mermaid");
 
-  await exec.exec("npx", ["repolens", ...args], {
-    silent: true
+  await exec.exec("npx", ["repolens", ...args], { silent: true });
+  return join(outputDir, "ARCHITECTURE.json");
+}
+
+async function summarizeChangedFiles(report: JsonReport): Promise<void> {
+  const apiKey = process.env.AI_PROVIDER_API_KEY;
+  if (!apiKey) {
+    core.info("AI_PROVIDER_API_KEY not set, skipping AI summaries");
+    return;
+  }
+
+  const changedFiles = getChangedFiles();
+  if (changedFiles.length === 0) {
+    core.info("No changed files detected, skipping AI summaries");
+    return;
+  }
+
+  const filesToSummarize = report.files.filter((f) => changedFiles.includes(f.path));
+  if (filesToSummarize.length === 0) {
+    core.info("No changed files in scan results, skipping AI summaries");
+    return;
+  }
+
+  core.info(`AI summarizing ${filesToSummarize.length} changed files (out of ${report.files.length} total)`);
+
+  const baseUrl = process.env.AI_PROVIDER_BASE_URL || "https://api.openai.com/v1";
+  const model = process.env.AI_PROVIDER_MODEL || "gpt-4o-mini";
+
+  for (const file of filesToSummarize) {
+    try {
+      const summary = await callAI(baseUrl, apiKey, model, file);
+      if (summary) {
+        file.summary = summary;
+        core.info(`  Summarized: ${file.path}`);
+      }
+    } catch (err) {
+      core.warning(`  Failed to summarize ${file.path}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+}
+
+function getChangedFiles(): string[] {
+  try {
+    const result = execSync("git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only $(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD origin/master 2>/dev/null || echo HEAD~1) HEAD 2>/dev/null", { encoding: "utf8" });
+    return result.split("\n").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function callAI(baseUrl: string, apiKey: string, model: string, file: JsonFileEntry): Promise<string> {
+  const symbolList = (file.symbols || []).map((s) => `${s.kind} ${s.name}${s.comment ? ` (${s.comment})` : ""}`).join(", ");
+  const importList = (file.imports || []).filter((i) => i.startsWith(".")).join(", ");
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: "Summarize this source file in 2-3 sentences. Focus on its purpose, key exports, and role in the codebase. Be specific and concise." },
+        { role: "user", content: `File: ${file.path}\nSymbols: ${symbolList || "none"}\nImports: ${importList || "none"}\n\nSummarize this file's purpose and role.` }
+      ],
+      temperature: 0.1,
+      max_tokens: 200
+    })
   });
 
-  return output;
+  if (!response.ok) {
+    throw new Error(`AI provider returned ${response.status}`);
+  }
+
+  const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content?.trim() || "";
 }
 
 async function run(): Promise<void> {
@@ -167,8 +239,13 @@ async function run(): Promise<void> {
 
     core.info(`Running RepoLens for ${eventName} on ${context.ref}`);
 
-    const outputPath = await runScan(summarize);
+    const outputPath = await runScan();
     const newReport = JSON.parse(readFileSync(outputPath, "utf8")) as JsonReport;
+
+    if (summarize) {
+      await summarizeChangedFiles(newReport);
+      writeFileSync(outputPath, JSON.stringify(newReport, null, 2));
+    }
 
     if (eventName === "pull_request") {
       const pr = context.payload.pull_request;
@@ -221,7 +298,6 @@ async function run(): Promise<void> {
       }
 
       if (shouldCommit) {
-        const { execSync } = await import("node:child_process");
         const hasChanges = execSync("git diff --name-only").toString().trim();
         if (hasChanges || !existsSync(outputPath)) {
           await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
