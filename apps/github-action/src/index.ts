@@ -4,7 +4,7 @@ import * as github from "@actions/github";
 import * as exec from "@actions/exec";
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 interface JsonFileEntry {
   path: string;
@@ -152,26 +152,56 @@ async function runScan(): Promise<string> {
   return join(outputDir, "ARCHITECTURE.json");
 }
 
-async function summarizeChangedFiles(report: JsonReport): Promise<void> {
+function getChangedFiles(existingReport: JsonReport | null, baseSha?: string): string[] {
+  try {
+    if (!existingReport) {
+      core.info("No existing ARCHITECTURE.json found — summarizing all files on first run");
+      return [];
+    }
+
+    let sha: string;
+    if (baseSha) {
+      sha = execSync(`git merge-base HEAD ${baseSha} 2>/dev/null || echo "${baseSha}"`, { encoding: "utf8" }).trim();
+    } else {
+      sha = execSync(`git rev-parse HEAD~1 2>/dev/null || echo ""`, { encoding: "utf8" }).trim();
+    }
+
+    if (!sha) {
+      core.info("No base commit found — summarizing all files");
+      return [];
+    }
+
+    const result = execSync(`git diff --name-only ${sha} HEAD`, { encoding: "utf8" });
+    return result.split("\n").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function summarizeChangedFiles(report: JsonReport, existingReport: JsonReport | null, baseSha?: string): Promise<void> {
   const apiKey = process.env.AI_PROVIDER_API_KEY;
   if (!apiKey) {
     core.info("AI_PROVIDER_API_KEY not set, skipping AI summaries");
     return;
   }
 
-  const changedFiles = getChangedFiles();
-  if (changedFiles.length === 0) {
+  const changedFiles = getChangedFiles(existingReport, baseSha);
+
+  let filesToSummarize: JsonFileEntry[];
+  if (changedFiles.length === 0 && !existingReport) {
+    filesToSummarize = report.files;
+    core.info(`First run — AI summarizing all ${filesToSummarize.length} files`);
+  } else if (changedFiles.length === 0) {
     core.info("No changed files detected, skipping AI summaries");
     return;
+  } else {
+    filesToSummarize = report.files.filter((f) => changedFiles.includes(f.path));
+    if (filesToSummarize.length === 0) {
+      core.info("No changed files in scan results, skipping AI summaries");
+      return;
+    }
+    core.info(`AI summarizing ${filesToSummarize.length} changed files (out of ${report.files.length} total)`);
   }
-
-  const filesToSummarize = report.files.filter((f) => changedFiles.includes(f.path));
-  if (filesToSummarize.length === 0) {
-    core.info("No changed files in scan results, skipping AI summaries");
-    return;
-  }
-
-  core.info(`AI summarizing ${filesToSummarize.length} changed files (out of ${report.files.length} total)`);
 
   const baseUrl = process.env.AI_PROVIDER_BASE_URL || "https://api.openai.com/v1";
   const model = process.env.AI_PROVIDER_MODEL || "gpt-4o-mini";
@@ -189,18 +219,25 @@ async function summarizeChangedFiles(report: JsonReport): Promise<void> {
   }
 }
 
-function getChangedFiles(): string[] {
-  try {
-    const result = execSync("git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only $(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD origin/master 2>/dev/null || echo HEAD~1) HEAD 2>/dev/null", { encoding: "utf8" });
-    return result.split("\n").filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
 async function callAI(baseUrl: string, apiKey: string, model: string, file: JsonFileEntry): Promise<string> {
   const symbolList = (file.symbols || []).map((s) => `${s.kind} ${s.name}${s.comment ? ` (${s.comment})` : ""}`).join(", ");
   const importList = (file.imports || []).filter((i) => i.startsWith(".")).join(", ");
+
+  let fileContent = "";
+  try {
+    const absPath = resolve(process.cwd(), file.path);
+    const raw = readFileSync(absPath, "utf8");
+    const maxChars = 4000;
+    fileContent = raw.length > maxChars ? raw.slice(0, maxChars) + "\n\n... (truncated)" : raw;
+  } catch {
+    // File not accessible, skip content
+  }
+
+  const contentParts: string[] = [`File: ${file.path}`];
+  if (symbolList) contentParts.push(`Symbols: ${symbolList}`);
+  if (importList) contentParts.push(`Imports: ${importList}`);
+  if (fileContent) contentParts.push(`Content:\n\`\`\`\n${fileContent}\n\`\`\``);
+  contentParts.push("\nSummarize this file's purpose and role in 2-3 sentences.");
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -211,8 +248,8 @@ async function callAI(baseUrl: string, apiKey: string, model: string, file: Json
     body: JSON.stringify({
       model,
       messages: [
-        { role: "system", content: "Summarize this source file in 2-3 sentences. Focus on its purpose, key exports, and role in the codebase. Be specific and concise." },
-        { role: "user", content: `File: ${file.path}\nSymbols: ${symbolList || "none"}\nImports: ${importList || "none"}\n\nSummarize this file's purpose and role.` }
+        { role: "system", content: "You are a code reviewer. Summarize source files concisely. Focus on purpose, key exports, and role in the codebase." },
+        { role: "user", content: contentParts.join("\n\n") }
       ],
       temperature: 0.1,
       max_tokens: 200
@@ -242,8 +279,12 @@ async function run(): Promise<void> {
     const outputPath = await runScan();
     const newReport = JSON.parse(readFileSync(outputPath, "utf8")) as JsonReport;
 
+    const existingPath = join(core.getInput("output-dir"), "ARCHITECTURE.json");
+    const existingReport: JsonReport | null = existsSync(existingPath) ? JSON.parse(readFileSync(existingPath, "utf8")) as JsonReport : null;
+
     if (summarize) {
-      await summarizeChangedFiles(newReport);
+      const baseSha = eventName === "pull_request" ? context.payload.pull_request?.base.sha : undefined;
+      await summarizeChangedFiles(newReport, existingReport, baseSha);
       writeFileSync(outputPath, JSON.stringify(newReport, null, 2));
     }
 
@@ -263,13 +304,13 @@ async function run(): Promise<void> {
       await exec.exec("git", ["checkout", `origin/${baseRef}`], { silent: true });
 
       let baseReport: JsonReport | null = null;
-      const existingPath = join(core.getInput("output-dir"), "ARCHITECTURE.json");
-      if (existsSync(existingPath)) {
-        baseReport = JSON.parse(readFileSync(existingPath, "utf8")) as JsonReport;
+      const basePath = join(core.getInput("output-dir"), "ARCHITECTURE.json");
+      if (existsSync(basePath)) {
+        baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
       } else {
         await exec.exec("npx", ["repolens", "scan", ".", "-f", "json", "-o", core.getInput("output-dir")], { silent: true });
-        if (existsSync(existingPath)) {
-          baseReport = JSON.parse(readFileSync(existingPath, "utf8")) as JsonReport;
+        if (existsSync(basePath)) {
+          baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
         }
       }
 
@@ -289,9 +330,7 @@ async function run(): Promise<void> {
         }
       }
     } else if (eventName === "push" || eventName === "workflow_dispatch") {
-      const existingPath = join(core.getInput("output-dir"), "ARCHITECTURE.json");
-      if (existsSync(existingPath)) {
-        const existingReport = JSON.parse(readFileSync(existingPath, "utf8")) as JsonReport;
+      if (existingReport) {
         const merged = mergeSummaries(newReport, existingReport);
         writeFileSync(outputPath, JSON.stringify(merged, null, 2));
         core.info("Merged with existing ARCHITECTURE.json (preserved AI summaries)");
