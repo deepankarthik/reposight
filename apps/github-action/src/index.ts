@@ -21,30 +21,25 @@ interface JsonReport {
   summary: { includedFiles: number };
 }
 
-function mergeSummaries(newReport: JsonReport, existingReport: JsonReport): JsonReport {
+function surgicalMerge(existingReport: JsonReport, newFiles: JsonFileEntry[], deletedPaths: string[]): JsonReport {
   const existingMap = new Map<string, JsonFileEntry>();
   for (const file of existingReport.files) {
     existingMap.set(file.path, file);
   }
 
-  const mergedFiles = newReport.files.map((newFile) => {
-    const existing = existingMap.get(newFile.path);
-    if (!existing) return newFile;
-    return {
-      ...newFile,
-      summary: existing.summary || newFile.summary,
-      fileComment: existing.fileComment || newFile.fileComment,
-      symbols: newFile.symbols.map((s) => {
-        const existingSymbol = existing.symbols?.find((es) => es.name === s.name && es.kind === s.kind);
-        return {
-          ...s,
-          comment: existingSymbol?.comment || s.comment
-        };
-      })
-    };
-  });
+  for (const file of newFiles) {
+    existingMap.set(file.path, file);
+  }
 
-  return { ...newReport, files: mergedFiles };
+  const deletedSet = new Set(deletedPaths);
+  const mergedFiles = [...existingMap.values()].filter((f) => !deletedSet.has(f.path));
+  mergedFiles.sort((a, b) => a.path.localeCompare(b.path));
+
+  return {
+    ...existingReport,
+    files: mergedFiles,
+    summary: { ...existingReport.summary, includedFiles: mergedFiles.length }
+  };
 }
 
 function formatDiffComment(baseReport: JsonReport, headReport: JsonReport, baseRef: string, headRef: string): string {
@@ -143,70 +138,32 @@ function formatDiffComment(baseReport: JsonReport, headReport: JsonReport, baseR
   return lines.join("\n");
 }
 
-async function runScan(): Promise<string> {
+async function runScan(files?: string[], summarize?: boolean): Promise<JsonReport> {
   const outputDir = core.getInput("output-dir");
+  const tmpOutput = join(outputDir, ".repolens-tmp.json");
   const args = ["scan", ".", "-f", "json", "-o", outputDir];
   if (core.getInput("include-mermaid") !== "true") args.push("--no-mermaid");
+  if (files?.length) args.push("--files", ...files);
+  if (summarize) args.push("--summarize");
 
   await exec.exec("npx", ["repolens", ...args], { silent: true });
-  return join(outputDir, "ARCHITECTURE.json");
+
+  const report = JSON.parse(readFileSync(tmpOutput, "utf8")) as JsonReport;
+  try { writeFileSync(tmpOutput, ""); } catch {}
+  return report;
 }
 
-function getChangedFiles(existingReport: JsonReport | null, baseSha?: string): string[] {
-  try {
-    if (!existingReport) {
-      core.info("No existing ARCHITECTURE.json found — summarizing all files on first run");
-      return [];
-    }
-
-    let sha: string;
-    if (baseSha) {
-      sha = execSync(`git merge-base HEAD ${baseSha} 2>/dev/null || echo "${baseSha}"`, { encoding: "utf8" }).trim();
-    } else {
-      sha = execSync(`git rev-parse HEAD~1 2>/dev/null || echo ""`, { encoding: "utf8" }).trim();
-    }
-
-    if (!sha) {
-      core.info("No base commit found — summarizing all files");
-      return [];
-    }
-
-    const result = execSync(`git diff --name-only ${sha} HEAD`, { encoding: "utf8" });
-    return result.split("\n").filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
-async function summarizeChangedFiles(report: JsonReport, existingReport: JsonReport | null, baseSha?: string): Promise<void> {
+async function summarizeFiles(report: JsonReport): Promise<void> {
   const apiKey = process.env.AI_PROVIDER_API_KEY;
   if (!apiKey) {
     core.info("AI_PROVIDER_API_KEY not set, skipping AI summaries");
     return;
   }
 
-  const changedFiles = getChangedFiles(existingReport, baseSha);
-
-  let filesToSummarize: JsonFileEntry[];
-  if (changedFiles.length === 0 && !existingReport) {
-    filesToSummarize = report.files;
-    core.info(`First run — AI summarizing all ${filesToSummarize.length} files`);
-  } else if (changedFiles.length === 0) {
-    core.info("No changed files detected, skipping AI summaries");
-    return;
-  } else {
-    filesToSummarize = report.files.filter((f) => changedFiles.includes(f.path));
-    if (filesToSummarize.length === 0) {
-      core.info("No changed files in scan results, skipping AI summaries");
-      return;
-    }
-    core.info(`AI summarizing ${filesToSummarize.length} changed files (out of ${report.files.length} total)`);
-  }
-
   const baseUrl = process.env.AI_PROVIDER_BASE_URL || "https://api.openai.com/v1";
   const model = process.env.AI_PROVIDER_MODEL || "gpt-4o-mini";
 
-  for (const file of filesToSummarize) {
+  for (const file of report.files) {
     try {
       const summary = await callAI(baseUrl, apiKey, model, file);
       if (summary) {
@@ -264,6 +221,38 @@ async function callAI(baseUrl: string, apiKey: string, model: string, file: Json
   return data.choices?.[0]?.message?.content?.trim() || "";
 }
 
+function getChangedFiles(baseSha?: string): { changed: string[]; deleted: string[] } {
+  try {
+    let sha: string;
+    if (baseSha) {
+      sha = execSync(`git merge-base HEAD ${baseSha} 2>/dev/null || echo "${baseSha}"`, { encoding: "utf8" }).trim();
+    } else {
+      sha = execSync(`git rev-parse HEAD~1 2>/dev/null || echo ""`, { encoding: "utf8" }).trim();
+    }
+
+    if (!sha) return { changed: [], deleted: [] };
+
+    const result = execSync(`git diff --name-status ${sha} HEAD`, { encoding: "utf8" });
+    const changed: string[] = [];
+    const deleted: string[] = [];
+
+    for (const line of result.split("\n").filter(Boolean)) {
+      const parts = line.split("\t");
+      const status = parts[0];
+      const file = parts[1];
+      if (status === "D") {
+        deleted.push(file);
+      } else {
+        changed.push(file);
+      }
+    }
+
+    return { changed, deleted };
+  } catch {
+    return { changed: [], deleted: [] };
+  }
+}
+
 async function run(): Promise<void> {
   try {
     const token = process.env.GITHUB_TOKEN || core.getInput("token");
@@ -276,16 +265,43 @@ async function run(): Promise<void> {
 
     core.info(`Running RepoLens for ${eventName} on ${context.ref}`);
 
-    const outputPath = await runScan();
-    const newReport = JSON.parse(readFileSync(outputPath, "utf8")) as JsonReport;
+    const outputDir = core.getInput("output-dir");
+    const outputPath = join(outputDir, "ARCHITECTURE.json");
+    const existingReport: JsonReport | null = existsSync(outputPath) ? JSON.parse(readFileSync(outputPath, "utf8")) as JsonReport : null;
 
-    const existingPath = join(core.getInput("output-dir"), "ARCHITECTURE.json");
-    const existingReport: JsonReport | null = existsSync(existingPath) ? JSON.parse(readFileSync(existingPath, "utf8")) as JsonReport : null;
+    let finalReport: JsonReport;
 
-    if (summarize) {
+    if (!existingReport) {
+      core.info("First run — scanning entire repo");
+      const report = await runScan(undefined, summarize);
+      if (summarize && !process.env.AI_PROVIDER_API_KEY) {
+        core.info("AI_PROVIDER_API_KEY not set, using heuristic summaries");
+      }
+      finalReport = report;
+    } else {
       const baseSha = eventName === "pull_request" ? context.payload.pull_request?.base.sha : undefined;
-      await summarizeChangedFiles(newReport, existingReport, baseSha);
-      writeFileSync(outputPath, JSON.stringify(newReport, null, 2));
+      const { changed, deleted } = getChangedFiles(baseSha);
+
+      if (changed.length === 0 && deleted.length === 0) {
+        core.info("No changed files detected, skipping update");
+        finalReport = existingReport;
+      } else {
+        if (changed.length > 0) {
+          core.info(`Scanning ${changed.length} changed files: ${changed.slice(0, 5).join(", ")}${changed.length > 5 ? "..." : ""}`);
+          const newReport = await runScan(changed, summarize);
+
+          if (summarize && process.env.AI_PROVIDER_API_KEY) {
+            core.info(`AI summarizing ${newReport.files.length} files`);
+            await summarizeFiles(newReport);
+          }
+
+          finalReport = surgicalMerge(existingReport, newReport.files, deleted);
+          core.info(`Merged: ${newReport.files.length} files updated, ${deleted.length} files removed, ${finalReport.files.length} total in ARCHITECTURE.json`);
+        } else {
+          finalReport = surgicalMerge(existingReport, [], deleted);
+          core.info(`Removed ${deleted.length} deleted files, ${finalReport.files.length} total in ARCHITECTURE.json`);
+        }
+      }
     }
 
     if (eventName === "pull_request") {
@@ -304,11 +320,11 @@ async function run(): Promise<void> {
       await exec.exec("git", ["checkout", `origin/${baseRef}`], { silent: true });
 
       let baseReport: JsonReport | null = null;
-      const basePath = join(core.getInput("output-dir"), "ARCHITECTURE.json");
+      const basePath = join(outputDir, "ARCHITECTURE.json");
       if (existsSync(basePath)) {
         baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
       } else {
-        await exec.exec("npx", ["repolens", "scan", ".", "-f", "json", "-o", core.getInput("output-dir")], { silent: true });
+        await exec.exec("npx", ["repolens", "scan", ".", "-f", "json", "-o", outputDir, "--no-mermaid"], { silent: true });
         if (existsSync(basePath)) {
           baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
         }
@@ -317,28 +333,21 @@ async function run(): Promise<void> {
       await exec.exec("git", ["checkout", "-"], { silent: true });
       await exec.exec("git", ["stash", "pop"], { silent: true, ignoreReturnCode: true });
 
-      if (baseReport) {
-        if (shouldComment) {
-          const comment = formatDiffComment(baseReport, newReport, baseRef, headRef);
-          await octokit.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-            body: comment
-          });
-          core.info("Posted PR comment with architectural changes");
-        }
+      if (baseReport && shouldComment) {
+        const comment = formatDiffComment(baseReport, finalReport, baseRef, headRef);
+        await octokit.rest.issues.createComment({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          issue_number: pr.number,
+          body: comment
+        });
+        core.info("Posted PR comment with architectural changes");
       }
     } else if (eventName === "push" || eventName === "workflow_dispatch") {
-      if (existingReport) {
-        const merged = mergeSummaries(newReport, existingReport);
-        writeFileSync(outputPath, JSON.stringify(merged, null, 2));
-        core.info("Merged with existing ARCHITECTURE.json (preserved AI summaries)");
-      }
-
       if (shouldCommit) {
+        writeFileSync(outputPath, JSON.stringify(finalReport, null, 2));
         const hasChanges = execSync("git diff --name-only").toString().trim();
-        if (hasChanges || !existsSync(outputPath)) {
+        if (hasChanges) {
           await exec.exec("git", ["config", "user.name", "github-actions[bot]"]);
           await exec.exec("git", ["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
           await exec.exec("git", ["add", outputPath]);
@@ -352,7 +361,7 @@ async function run(): Promise<void> {
     }
 
     core.setOutput("output-path", outputPath);
-    core.setOutput("files-scanned", newReport.summary.includedFiles);
+    core.setOutput("files-scanned", finalReport.summary.includedFiles);
   } catch (error) {
     core.setFailed(error instanceof Error ? error.message : String(error));
   }

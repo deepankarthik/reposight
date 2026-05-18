@@ -43,7 +43,7 @@ function createFileSummarizeFn(provider: ReturnType<typeof createAIProvider>, mo
   };
 }
 
-async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }): Promise<void> {
+async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean; files?: string[] }): Promise<void> {
   const envConfig = readConfigFromEnv();
   const fileConfig = await loadConfigFile(dir);
   const config = mergeConfig(fileConfig, envConfig);
@@ -59,8 +59,9 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
 
   const context = await scanRepository({
     rootDir: dir,
-    maxFiles: config.maxContextFiles,
-    maxBytes: config.maxContextBytes,
+    files: options.files,
+    maxFiles: options.files ? Infinity : config.maxContextFiles,
+    maxBytes: options.files ? Infinity : config.maxContextBytes,
     maxFileBytes: config.maxFileBytes,
     maxChunkChars: config.maxChunkChars,
     ignoreTests: options.ignoreTests,
@@ -211,10 +212,11 @@ program
   .option("-f, --format <format>", "Output format: markdown (default) or json")
   .option("--include <patterns...>", "Only include files matching these glob patterns")
   .option("--exclude <patterns...>", "Exclude files matching these glob patterns")
+  .option("--files <paths...>", "Scan only these specific files (relative paths)")
   .option("--summarize", "Generate AI-powered file summaries (requires API key)")
-  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }) => {
+  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; files?: string[]; summarize?: boolean }) => {
     try {
-      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude, summarize: options.summarize });
+      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude, files: options.files, summarize: options.summarize });
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
