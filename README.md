@@ -54,7 +54,6 @@ Scan a repository and generate architecture documentation.
 | `-o, --output <dir>` | Output directory (defaults to repo root) |
 | `-f, --format <format>` | `markdown` (default) or `json` |
 | `--no-mermaid` | Skip Mermaid diagram generation |
-| `--no-ai` | Skip AI-generated summary |
 | `--file-level` | File-level dependency graph (vs package-level) |
 | `--ignore-tests` | Exclude test files |
 | `--target-file <path>` | Score files relative to this target |
@@ -119,18 +118,7 @@ Everything else runs locally with zero AI calls:
 
 ### Disabling AI
 
-AI is **off by default**. To ensure it stays off:
-- Don't pass `--summarize`
-- Don't set `AI_PROVIDER_API_KEY` (without a key, the local dev provider is used which simulates responses)
-- Pass `--no-ai` to skip the AI summary step entirely (even if `--summarize` was passed)
-
-```bash
-# Guaranteed no AI calls
-repolens scan . --no-ai
-
-# Or just don't pass --summarize
-repolens scan .
-```
+AI is **off by default**. As long as you don't pass `--summarize`, no AI calls are made. All file summaries in the output are generated heuristically from code analysis — zero cost, instant, and fully local.
 
 ### AI Provider Configuration
 

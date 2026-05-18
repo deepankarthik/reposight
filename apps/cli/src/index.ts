@@ -10,7 +10,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Command } from "commander";
 import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
-import { createAIProvider, generateArchitectureSummary, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@repolens/ai";
+import { createAIProvider, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@repolens/ai";
 import { errorMessage, readConfigFromEnv, createLogger, loadConfigFile, mergeConfig } from "@repolens/shared";
 
 const fs = { readFile: fsReadFile };
@@ -43,7 +43,7 @@ function createFileSummarizeFn(provider: ReturnType<typeof createAIProvider>, mo
   };
 }
 
-async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; noAi?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }): Promise<void> {
+async function runScan(dir: string, outputDir: string, options: { noMermaid?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }): Promise<void> {
   const envConfig = readConfigFromEnv();
   const fileConfig = await loadConfigFile(dir);
   const config = mergeConfig(fileConfig, envConfig);
@@ -106,15 +106,6 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
       await writeFile(diagramPath, diagram, "utf8");
       log.info("wrote dependency diagram", { path: diagramPath });
     }
-  }
-
-  if (!options.noAi && config.aiProviderApiKey) {
-    log.info("generating AI summary...");
-    const provider = createAIProvider(config);
-    const summary = await generateArchitectureSummary(provider, context, config.aiProviderModel);
-    const summaryPath = outputDir ? join(outputDir, "AI_SUMMARY.md") : join(dir, "AI_SUMMARY.md");
-    await writeFile(summaryPath, `# AI Architecture Summary\n\n${summary}`, "utf8");
-    log.info("wrote AI summary", { path: summaryPath });
   }
 }
 
@@ -214,7 +205,6 @@ program
   .description("Scan a repository and generate architecture documentation")
   .option("-o, --output <dir>", "Output directory (defaults to repo root)")
   .option("--no-mermaid", "Skip Mermaid diagram generation")
-  .option("--no-ai", "Skip AI-generated summary")
   .option("--file-level", "Generate file-level dependency graph instead of package-level")
   .option("--ignore-tests", "Exclude test files from scanning")
   .option("--target-file <path>", "Score files relative to this target (proximity, test-pairing, same-package)")
@@ -222,9 +212,9 @@ program
   .option("--include <patterns...>", "Only include files matching these glob patterns")
   .option("--exclude <patterns...>", "Exclude files matching these glob patterns")
   .option("--summarize", "Generate AI-powered file summaries (requires API key)")
-  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; ai?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }) => {
+  .action(async (dir: string | undefined, options: { output?: string; mermaid?: boolean; fileLevel?: boolean; ignoreTests?: boolean; targetFile?: string; format?: string; include?: string[]; exclude?: string[]; summarize?: boolean }) => {
     try {
-      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, noAi: !options.ai, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude, summarize: options.summarize });
+      await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude, summarize: options.summarize });
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
