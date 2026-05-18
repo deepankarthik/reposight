@@ -24,6 +24,84 @@ const JAVA_CLASS_RE = /^(?:public\s+|abstract\s+|final\s+)*(?:class|interface|en
 const JAVA_METHOD_RE = /^\s*(?:public|private|protected|static|final|abstract|synchronized|\s)+[\w<>\[\],\s]+\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{/gm;
 const JAVA_IMPORT_RE = /^import\s+(static\s+)?([\w.*]+);/gm;
 
+function extractLeadingComment(source: string, lines: string[], symbolLine: number): string | undefined {
+  if (symbolLine <= 1) return undefined;
+  const commentLines: string[] = [];
+  for (let i = symbolLine - 2; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (!line) break;
+    if (line.startsWith("//")) {
+      commentLines.unshift(line.slice(2).trim());
+    } else if (line.startsWith("*/")) {
+      commentLines.unshift(line.slice(0, -2).replace(/^\*\s?/, "").trim());
+      i--;
+      while (i >= 0 && !lines[i].trim().startsWith("/*")) {
+        const inner = lines[i].trim().replace(/^\*\s?/, "");
+        if (inner) commentLines.unshift(inner);
+        i--;
+      }
+      if (i >= 0) {
+        const startLine = lines[i].trim();
+        if (startLine.startsWith("/*")) {
+          const inner = startLine.slice(2).replace(/^\*/, "").trim();
+          if (inner) commentLines.unshift(inner);
+        }
+      }
+      break;
+    } else if (line.startsWith("/*")) {
+      commentLines.unshift(line.slice(2).replace(/^\*\s?/, "").trim());
+      break;
+    } else if (line.startsWith("*") || line.startsWith("* ")) {
+      commentLines.unshift(line.replace(/^\*\s?/, "").trim());
+    } else if (line.startsWith('"""') || line.startsWith("'''")) {
+      const quote = line.slice(0, 3);
+      const content = line.replace(/^['"]{3}|['"]{3}$/g, "").trim();
+      if (content) commentLines.unshift(content);
+      break;
+    } else {
+      break;
+    }
+  }
+  const comment = commentLines.filter(Boolean).join(" ").trim();
+  return comment.length > 0 ? comment : undefined;
+}
+
+function extractPythonSymbols(source: string): CodeSymbol[] {
+  const symbols: CodeSymbol[] = [];
+  const classStack: Array<{ name: string; indent: number }> = [];
+  const lines = source.split("\n");
+
+  let match: RegExpExecArray | null;
+
+  while ((match = PYTHON_CLASS_RE.exec(source)) !== null) {
+    if (symbols.length >= MAX_SYMBOLS) break;
+    const indent = match[1]?.length ?? 0;
+    const name = match[2];
+    const lineNum = getLineNumber(source, match.index);
+
+    while (classStack.length > 0 && classStack[classStack.length - 1].indent >= indent) {
+      classStack.pop();
+    }
+
+    symbols.push({ name, kind: "class", line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
+    classStack.push({ name, indent });
+  }
+
+  while ((match = PYTHON_FUNC_RE.exec(source)) !== null) {
+    if (symbols.length >= MAX_SYMBOLS) break;
+    const indent = match[1]?.length ?? 0;
+    const name = match[2];
+    const lineNum = getLineNumber(source, match.index);
+
+    const parentClass = [...classStack].reverse().find((c) => c.indent < indent);
+    const kind = parentClass ? "method" : "function";
+
+    symbols.push({ name, kind, line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
+  }
+
+  return symbols.slice(0, MAX_SYMBOLS);
+}
+
 function countLeadingSpaces(line: string): number {
   const match = line.match(/^(\s*)/);
   return match ? match[1].length : 0;
@@ -46,41 +124,6 @@ function getLineContent(source: string, lines: string[], index: number): string 
     lineNum++;
   }
   return lines[lineNum] || "";
-}
-
-function extractPythonSymbols(source: string): CodeSymbol[] {
-  const symbols: CodeSymbol[] = [];
-  const classStack: Array<{ name: string; indent: number }> = [];
-
-  let match: RegExpExecArray | null;
-
-  while ((match = PYTHON_CLASS_RE.exec(source)) !== null) {
-    if (symbols.length >= MAX_SYMBOLS) break;
-    const indent = match[1]?.length ?? 0;
-    const name = match[2];
-    const lineNum = getLineNumber(source, match.index);
-
-    while (classStack.length > 0 && classStack[classStack.length - 1].indent >= indent) {
-      classStack.pop();
-    }
-
-    symbols.push({ name, kind: "class", line: lineNum });
-    classStack.push({ name, indent });
-  }
-
-  while ((match = PYTHON_FUNC_RE.exec(source)) !== null) {
-    if (symbols.length >= MAX_SYMBOLS) break;
-    const indent = match[1]?.length ?? 0;
-    const name = match[2];
-    const lineNum = getLineNumber(source, match.index);
-
-    const parentClass = [...classStack].reverse().find((c) => c.indent < indent);
-    const kind = parentClass ? "method" : "function";
-
-    symbols.push({ name, kind, line: lineNum });
-  }
-
-  return symbols.slice(0, MAX_SYMBOLS);
 }
 
 function extractPythonImports(source: string): string[] {
@@ -120,7 +163,7 @@ function extractGoSymbols(source: string): CodeSymbol[] {
     const lineContent = getLineContent(source, lines, match.index);
     const indent = countLeadingSpaces(lineContent);
 
-    symbols.push({ name, kind: "class", line: lineNum });
+    symbols.push({ name, kind: "class", line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
     structStack.push({ name, indent });
   }
 
@@ -131,7 +174,7 @@ function extractGoSymbols(source: string): CodeSymbol[] {
     const lineContent = getLineContent(source, lines, match.index);
     const indent = countLeadingSpaces(lineContent);
 
-    symbols.push({ name, kind: "interface", line: lineNum });
+    symbols.push({ name, kind: "interface", line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
     interfaceStack.push({ name, indent });
   }
 
@@ -147,7 +190,7 @@ function extractGoSymbols(source: string): CodeSymbol[] {
     const inInterface = interfaceStack.some((s) => s.indent < indent);
 
     const kind = isMethod || inStruct || inInterface ? "method" : "function";
-    symbols.push({ name, kind, line: lineNum });
+    symbols.push({ name, kind, line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
   }
 
   return symbols.slice(0, MAX_SYMBOLS);
@@ -186,21 +229,21 @@ function extractRustSymbols(source: string): CodeSymbol[] {
     if (symbols.length >= MAX_SYMBOLS) break;
     const name = match[1];
     const lineNum = getLineNumber(source, match.index);
-    symbols.push({ name, kind: "class", line: lineNum });
+    symbols.push({ name, kind: "class", line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
   }
 
   while ((match = RUST_ENUM_RE.exec(source)) !== null) {
     if (symbols.length >= MAX_SYMBOLS) break;
     const name = match[1];
     const lineNum = getLineNumber(source, match.index);
-    symbols.push({ name, kind: "type", line: lineNum });
+    symbols.push({ name, kind: "type", line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
   }
 
   while ((match = RUST_TRAIT_RE.exec(source)) !== null) {
     if (symbols.length >= MAX_SYMBOLS) break;
     const name = match[1];
     const lineNum = getLineNumber(source, match.index);
-    symbols.push({ name, kind: "interface", line: lineNum });
+    symbols.push({ name, kind: "interface", line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
   }
 
   while ((match = RUST_IMPL_RE.exec(source)) !== null) {
@@ -222,7 +265,7 @@ function extractRustSymbols(source: string): CodeSymbol[] {
 
     const parentImpl = [...implBlocks].reverse().find((impl) => impl.startPos < fnIndex && impl.indent < indent);
     const kind = parentImpl ? "method" : "function";
-    symbols.push({ name, kind, line: lineNum });
+    symbols.push({ name, kind, line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
   }
 
   return symbols.slice(0, MAX_SYMBOLS);
@@ -268,7 +311,7 @@ function extractJavaSymbols(source: string): CodeSymbol[] {
     const fullMatch = match[0];
     const kind = fullMatch.includes("interface") ? "interface" :
                  fullMatch.includes("enum") ? "type" : "class";
-    symbols.push({ name, kind, line: lineNum });
+    symbols.push({ name, kind, line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
     classStack.push({ name, indent });
   }
 
@@ -281,7 +324,7 @@ function extractJavaSymbols(source: string): CodeSymbol[] {
 
     const inClass = classStack.some((c) => c.indent < indent);
     const kind = inClass ? "method" : "function";
-    symbols.push({ name, kind, line: lineNum });
+    symbols.push({ name, kind, line: lineNum, comment: extractLeadingComment(source, lines, lineNum) });
   }
 
   return symbols.slice(0, MAX_SYMBOLS);
@@ -341,6 +384,24 @@ function getNodeName(node: ts.Node): string | undefined {
   return undefined;
 }
 
+function extractLeadingTsComment(sourceFile: ts.SourceFile, node: ts.Node): string | undefined {
+  const fullText = sourceFile.getFullText();
+  const comments = ts.getLeadingCommentRanges(fullText, node.getFullStart());
+  if (!comments || comments.length === 0) return undefined;
+  const parts: string[] = [];
+  for (const comment of comments) {
+    const text = fullText.slice(comment.pos, comment.end);
+    if (comment.kind === ts.SyntaxKind.SingleLineCommentTrivia) {
+      parts.push(text.replace(/^\/\/\s?/, "").trim());
+    } else if (comment.kind === ts.SyntaxKind.MultiLineCommentTrivia) {
+      const cleaned = text.replace(/^\/\*+|\*+\/$/g, "").split("\n").map(l => l.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ");
+      parts.push(cleaned);
+    }
+  }
+  const comment = parts.join(" ").trim();
+  return comment.length > 0 ? comment : undefined;
+}
+
 function extractSymbolsFromNode(node: ts.Node, source: ts.SourceFile, symbols: CodeSymbol[]): void {
   if (symbols.length >= MAX_SYMBOLS) return;
 
@@ -352,7 +413,7 @@ function extractSymbolsFromNode(node: ts.Node, source: ts.SourceFile, symbols: C
 
     if (kind && name) {
       const { line } = source.getLineAndCharacterOfPosition(child.getStart(source));
-      symbols.push({ name, kind, line: line + 1 });
+      symbols.push({ name, kind, line: line + 1, comment: extractLeadingTsComment(source, child) });
     }
 
     if (ts.isClassDeclaration(child) || ts.isInterfaceDeclaration(child)) {

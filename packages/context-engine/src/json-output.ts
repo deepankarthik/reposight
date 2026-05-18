@@ -9,6 +9,7 @@ interface JsonFileEntry {
   symbols: CodeSymbol[];
   imports: string[];
   summary: string;
+  fileComment?: string;
 }
 
 interface JsonImportGraphNode {
@@ -78,7 +79,8 @@ export function generateJsonReport(context: RepositoryContext, includeContent = 
     size: f.size,
     symbols: f.symbols ?? [],
     imports: f.imports ?? [],
-    summary: f.summary ?? ""
+    summary: f.summary ?? "",
+    fileComment: f.fileComment
   }));
 
   const importGraph = context.importGraph;

@@ -4,6 +4,7 @@ export interface CodeSymbol {
   name: string;
   kind: "function" | "class" | "interface" | "type" | "variable" | "method" | "unknown";
   line: number;
+  comment?: string;
 }
 
 export interface ContextFile {
@@ -17,6 +18,7 @@ export interface ContextFile {
   symbols?: CodeSymbol[];
   imports?: string[];
   summary?: string;
+  fileComment?: string;
 }
 
 export interface ContextChunk extends ContextFile {

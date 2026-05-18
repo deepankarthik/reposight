@@ -3,6 +3,7 @@ import type { CodeSymbol } from "@repolens/shared";
 interface CacheEntry {
   content: string;
   symbols: CodeSymbol[];
+  fileComment?: string;
   mtimeMs: number;
   size: number;
   lastAccess: number;
@@ -31,11 +32,11 @@ export class FileCache {
     return entry;
   }
 
-  set(absolutePath: string, mtimeMs: number, size: number, content: string, symbols: CodeSymbol[]): void {
+  set(absolutePath: string, mtimeMs: number, size: number, content: string, symbols: CodeSymbol[], fileComment?: string): void {
     if (this.entries.size >= this.maxEntries) {
       this.evictOldest();
     }
-    this.entries.set(absolutePath, { content, symbols, mtimeMs, size, lastAccess: Date.now() + this.entries.size });
+    this.entries.set(absolutePath, { content, symbols, fileComment, mtimeMs, size, lastAccess: Date.now() + this.entries.size });
   }
 
   invalidate(absolutePath: string): void {

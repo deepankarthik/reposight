@@ -17,6 +17,69 @@ interface FileSummaryFn {
   (filePath: string, content: string, symbols: Array<{name: string; kind: string; line: number}>, imports: string[]): Promise<string>;
 }
 
+function extractFileComment(source: string, language: string): string | undefined {
+  const lines = source.split("\n");
+  const commentLines: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!line) { i++; continue; }
+    if (line.startsWith("#!") ) { i++; continue; }
+    if (language === "python" && (line.startsWith('"""') || line.startsWith("'''"))) {
+      const quote = line.slice(0, 3);
+      if (line.endsWith(quote) && line.length > 6) {
+        return line.slice(3, -3).trim();
+      }
+      commentLines.push(line.slice(3));
+      i++;
+      while (i < lines.length && !lines[i].trim().endsWith(quote)) {
+        commentLines.push(lines[i].trim());
+        i++;
+      }
+      if (i < lines.length) commentLines.push(lines[i].trim().slice(0, -3));
+      return commentLines.filter(Boolean).join(" ").trim() || undefined;
+    }
+    if (line.startsWith("///")) {
+      commentLines.push(line.slice(3).trim());
+      i++;
+      continue;
+    }
+    if (line.startsWith("/**")) {
+      if (line.includes("*/") && line.length > 4) {
+        const inner = line.slice(3, line.indexOf("*/")).trim();
+        if (inner) return inner;
+      }
+      commentLines.push(line.slice(3).replace(/^\*/, "").trim());
+      i++;
+      while (i < lines.length) {
+        const inner = lines[i].trim();
+        if (inner.endsWith("*/")) {
+          const cleaned = inner.slice(0, -2).replace(/^\*\s?/, "").trim();
+          if (cleaned) commentLines.push(cleaned);
+          break;
+        }
+        commentLines.push(inner.replace(/^\*\s?/, "").trim());
+        i++;
+      }
+      return commentLines.filter(Boolean).join(" ").trim() || undefined;
+    }
+    if (line.startsWith("//")) {
+      commentLines.push(line.slice(2).trim());
+      i++;
+      while (i < lines.length && lines[i].trim().startsWith("//")) {
+        commentLines.push(lines[i].trim().slice(2).trim());
+        i++;
+      }
+      return commentLines.filter(Boolean).join(" ").trim() || undefined;
+    }
+    break;
+  }
+
+  const comment = commentLines.filter(Boolean).join(" ").trim();
+  return comment.length > 0 ? comment : undefined;
+}
+
 interface ScanRepositoryOptions {
   rootDir: string;
   files?: string[];
@@ -210,7 +273,7 @@ async function readFilesWithinBudget(
           }
 
           const imports = extractImportsFromSource(cached.content, languageFromPath(file.relativePath));
-          const summary = generateHeuristicSummary(file.relativePath, cached.symbols, imports);
+          const summary = generateHeuristicSummary(file.relativePath, cached.symbols, imports, cached.fileComment);
 
           files.push({
             path: file.relativePath,
@@ -220,7 +283,8 @@ async function readFilesWithinBudget(
             size: stat.size,
             symbols: cached.symbols,
             imports,
-            summary
+            summary,
+            fileComment: cached.fileComment
           });
 
           totalBytes += contentBytes;
@@ -237,7 +301,8 @@ async function readFilesWithinBudget(
         const language = languageFromPath(file.relativePath);
         const symbols = extractSymbols(content, language);
         const imports = extractImportsFromSource(content, language);
-        const summary = generateHeuristicSummary(file.relativePath, symbols, imports);
+        const fileComment = extractFileComment(content, language);
+        const summary = generateHeuristicSummary(file.relativePath, symbols, imports, fileComment);
 
         const contentBytes = Buffer.byteLength(content, "utf8");
         if (contentBytes === 0 || files.length >= maxFiles) {
@@ -245,7 +310,7 @@ async function readFilesWithinBudget(
           continue;
         }
 
-        cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols);
+        cache.set(file.absolutePath, stat.mtimeMs, stat.size, content, symbols, fileComment);
 
         files.push({
           path: file.relativePath,
@@ -255,7 +320,8 @@ async function readFilesWithinBudget(
           size: stat.size,
           symbols,
           imports,
-          summary
+          summary,
+          fileComment
         });
 
         totalBytes += contentBytes;

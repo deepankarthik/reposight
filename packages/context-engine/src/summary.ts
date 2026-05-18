@@ -3,7 +3,8 @@ import type { CodeSymbol } from "@repolens/shared";
 export function generateHeuristicSummary(
   filePath: string,
   symbols: CodeSymbol[],
-  imports: string[]
+  imports: string[],
+  fileComment?: string
 ): string {
   const name = filePath.split("/").pop() ?? filePath;
   const ext = name.split(".").pop()?.toLowerCase();
@@ -17,8 +18,10 @@ export function generateHeuristicSummary(
 
   const parts: string[] = [];
 
-  // Describe file role based on location
-  if (filePath.includes("index")) {
+  // Use file-level comment if available
+  if (fileComment) {
+    parts.push(fileComment);
+  } else if (filePath.includes("index")) {
     parts.push(`Entry point for the ${parentDir} module`);
   } else if (filePath.includes("test") || filePath.includes("spec")) {
     parts.push(`Test file for ${name.replace(/\.test\.\w+/, "").replace(/\.spec\.\w+/, "")}`);
@@ -42,18 +45,24 @@ export function generateHeuristicSummary(
     parts.push(`Request handler`);
   }
 
-  // Add symbol details
-  if (classNames.length > 0) {
-    parts.push(`Defines ${classNames.length > 1 ? "classes" : "class"}: ${classNames.slice(0, 3).join(", ")}`);
-  }
-  if (interfaceNames.length > 0) {
-    parts.push(`Defines ${interfaceNames.length > 1 ? "interfaces" : "interface"}: ${interfaceNames.slice(0, 3).join(", ")}`);
-  }
-  if (functionNames.length > 0) {
-    parts.push(`Exports ${functionNames.length > 1 ? "functions" : "function"}: ${functionNames.slice(0, 3).join(", ")}`);
-  }
-  if (methodNames.length > 0 && classNames.length === 0) {
-    parts.push(`Contains methods: ${methodNames.slice(0, 3).join(", ")}`);
+  // Add symbol details with comments
+  const symbolsWithComments = symbols.filter((s) => s.comment);
+  if (symbolsWithComments.length > 0) {
+    const topComments = symbolsWithComments.slice(0, 3).map((s) => `${s.name}: ${s.comment}`);
+    parts.push(topComments.join(". "));
+  } else {
+    if (classNames.length > 0) {
+      parts.push(`Defines ${classNames.length > 1 ? "classes" : "class"}: ${classNames.slice(0, 3).join(", ")}`);
+    }
+    if (interfaceNames.length > 0) {
+      parts.push(`Defines ${interfaceNames.length > 1 ? "interfaces" : "interface"}: ${interfaceNames.slice(0, 3).join(", ")}`);
+    }
+    if (functionNames.length > 0) {
+      parts.push(`Exports ${functionNames.length > 1 ? "functions" : "function"}: ${functionNames.slice(0, 3).join(", ")}`);
+    }
+    if (methodNames.length > 0 && classNames.length === 0) {
+      parts.push(`Contains methods: ${methodNames.slice(0, 3).join(", ")}`);
+    }
   }
 
   // Add import details

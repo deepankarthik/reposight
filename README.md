@@ -37,8 +37,9 @@ npx repolens scan .
 - **Multi-language scanning** — TypeScript/JavaScript (AST), Python, Go, Rust, Java (regex)
 - **Smart file selection** — Prioritizes important files using import graphs, git recency, and test pairing
 - **Symbol extraction** — Functions, classes, interfaces with line numbers
+- **Comment extraction** — JSDoc, docstrings, and `//` comments captured alongside symbols
 - **Dependency graphs** — Import tracking with package resolution
-- **Heuristic summaries** — Every file gets an automatic description (zero AI cost)
+- **Heuristic summaries** — Every file gets an automatic description using comments, symbols, and imports (zero AI cost)
 - **AI-powered summaries** — Optional `--summarize` flag for LLM-generated explanations
 - **Content-level diffs** — Compare git refs with symbol/import tracking
 - **Interactive web UI** — Visual graph, architecture layers, search, and cross-references
@@ -161,8 +162,8 @@ Or use environment variables:
 
 1. **Discover** — Walk the directory tree, respecting `.gitignore` and generated file patterns
 2. **Score** — Rank files by import depth, git recency, test pairing, and directory proximity
-3. **Extract** — Parse symbols (AST for TS/JS, regex for others) and build import graphs
-4. **Summarize** — Generate heuristic descriptions from paths, symbols, and imports
+3. **Extract** — Parse symbols (AST for TS/JS, regex for others), extract comments (JSDoc, docstrings, `//`), and build import graphs
+4. **Summarize** — Generate heuristic descriptions from file comments, symbol comments, paths, and imports
 5. **Output** — Produce Markdown reports, JSON data, or both
 
 ## Project Structure
