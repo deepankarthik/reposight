@@ -43,6 +43,7 @@ npx repolens scan .
 - **AI-powered summaries** — Optional `--summarize` flag for LLM-generated explanations
 - **Content-level diffs** — Compare git refs with symbol/import tracking
 - **Interactive web UI** — Visual graph, architecture layers, search, and cross-references
+- **GitHub Action** — Auto-generate and update architecture docs on every push and PR
 
 ## CLI Commands
 
@@ -93,45 +94,42 @@ The web UI (`apps/web/public/index.html`) provides a visual way to explore any c
 
 **No server required** — open `index.html` directly in your browser. It reads `ARCHITECTURE.json` from the same directory.
 
-## AI Usage
+## GitHub Action
 
-RepoLens works **fully without AI** by default. AI is an optional enhancement.
+Automatically generate and update architecture documentation on every push and pull request.
 
-### When AI is Used
+Add `.github/workflows/repolens.yml` to your repo:
 
-AI is only invoked when you explicitly pass the `--summarize` flag:
+```yaml
+name: RepoLens
 
-```bash
-repolens scan . --summarize
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  repolens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: deepankarthik/repolens/apps/github-action@master
+        with:
+          commit: true      # Auto-commit ARCHITECTURE.json
+          comment: true     # Post PR comment with changes
+          summarize: false  # Set true for AI summaries (requires AI_PROVIDER_API_KEY)
 ```
 
-This sends each file's content (truncated to 4000 chars), symbols, and imports to your configured AI provider to generate a per-file summary. These summaries appear in `ARCHITECTURE.json` and the web UI.
-
-### When AI is NOT Used
-
-Everything else runs locally with zero AI calls:
-- File discovery and scoring
-- Symbol extraction (AST/regex)
-- Import graph building
-- Heuristic summaries (generated from path patterns, symbol names, and imports)
-- Diff analysis between git refs
-- Web UI rendering
-
-### Disabling AI
-
-AI is **off by default**. As long as you don't pass `--summarize`, no AI calls are made. All file summaries in the output are generated heuristically from code analysis — zero cost, instant, and fully local.
-
-### AI Provider Configuration
-
-If you want AI summaries, set these variables:
-
-```bash
-export AI_PROVIDER_API_KEY=sk-your-key
-export AI_PROVIDER_BASE_URL=https://api.openai.com/v1  # or any OpenAI-compatible endpoint
-export AI_PROVIDER_MODEL=gpt-4o-mini
-```
-
-Supported providers: OpenAI, Anthropic, Groq, Together, DeepSeek, OpenRouter, or any OpenAI-compatible API.
+**What it does:**
+- **On push:** Scans the repo, updates `ARCHITECTURE.json`, and commits it back. Preserves existing AI summaries.
+- **On PR:** Compares the PR branch against the base branch and posts a comment showing added/removed/modified files with symbol and import changes.
 
 ## Configuration
 
@@ -176,8 +174,9 @@ repolens/
 │   └── ai/               # AI provider (local + remote)
 ├── apps/
 │   ├── cli/              # CLI: scan, diff, init commands
-│   └── web/              # Interactive Explorer (static HTML)
-└── .github/workflows/    # CI pipeline
+│   ├── web/              # Interactive Explorer (static HTML)
+│   └── github-action/    # GitHub Action for auto-updating docs
+└── .github/workflows/    # CI pipeline + RepoLens action example
 ```
 
 ## Development

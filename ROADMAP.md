@@ -4,14 +4,17 @@
 
 ## Current State (v0.1.0) ✅
 - ✅ Multi-language scanning (TS/JS, Python, Go, Rust, Java)
-- ✅ Symbol extraction (AST for TS/JS, regex for others)
+- ✅ Symbol extraction with comment capture (AST for TS/JS, regex for others)
 - ✅ Import graph with package resolution
 - ✅ Heuristic file scoring (import depth, git recency, proximity, test pairing)
 - ✅ Content-level diff analysis
 - ✅ JSON output for programmatic consumption
 - ✅ Smart filtering (.gitignore, include/exclude, generated files)
 - ✅ File caching with mtime invalidation
-- ✅ 376 tests, CI pipeline
+- ✅ 392 tests, CI pipeline
+- ✅ npm publishing ready (bundled CLI, 98KB)
+- ✅ Interactive web UI (static HTML, no server)
+- ✅ GitHub Action for auto-generating architecture docs
 
 ## North Star
 **Two surfaces, one product:**
@@ -24,24 +27,23 @@ The context engine is internal infrastructure, not a product.
 
 ## Phase 1: Interactive Explorer (Weeks 1-3)
 
-### Week 1: Web UI Foundation
-- [ ] Create `apps/web/` with Next.js or Vite + React
-- [ ] Build file tree component with symbol extraction
-- [ ] Render import graph using vis.js or Cytoscape.js
-- [ ] Wire up existing JSON output as data source
-- [ ] Basic navigation: click file → see imports, imported-by, symbols
+### Week 1: Web UI Foundation ✅
+- [x] Static HTML web UI (no build step, no server)
+- [x] Render import graph using vis.js
+- [x] Wire up existing JSON output as data source
+- [x] Basic navigation: click file → see imports, imported-by, symbols
 
-### Week 2: Code Flow Tracing
-- [ ] Click a symbol → see where it's referenced across files
-- [ ] Search bar: type "auth" → highlight auth-related files and symbols
-- [ ] Data flow visualization: trace from entry point → database
-- [ ] File content viewer with syntax highlighting
-- [ ] Symbol cross-referencing integration
+### Week 2: Code Flow Tracing ✅
+- [x] Click a symbol → see where it's referenced across files
+- [x] Search bar: type "auth" → highlight auth-related files and symbols
+- [x] Data flow visualization: trace from entry point → database
+- [x] File content viewer with syntax highlighting
+- [x] Symbol cross-referencing integration
 
 ### Week 3: Polish & Launch
-- [ ] Responsive design for mobile/tablet
-- [ ] Dark mode
-- [ ] Export/share architecture maps
+- [x] Responsive design for mobile/tablet
+- [ ] Dark mode toggle
+- [x] Export architecture maps as PNG
 - [ ] Deploy to Vercel/Netlify
 - [ ] Landing page with demo video
 - [ ] Launch on Hacker News / Product Hunt
@@ -50,12 +52,12 @@ The context engine is internal infrastructure, not a product.
 
 ## Phase 2: Living Docs (Weeks 4-5)
 
-### Week 4: GitHub Action
-- [ ] Create `apps/github-action/`
-- [ ] Scan repo on push, generate `ARCHITECTURE.md`
-- [ ] Compare with previous version, detect architectural changes
-- [ ] Post PR comment with: new deps, removed deps, modified flows
-- [ ] Support custom config via `.repolensrc.json`
+### Week 4: GitHub Action ✅
+- [x] Create `apps/github-action/`
+- [x] Scan repo on push, generate `ARCHITECTURE.json`
+- [x] Compare with previous version, detect architectural changes
+- [x] Post PR comment with: new deps, removed deps, modified flows
+- [x] Support custom config via `.repolensrc.json`
 
 ### Week 5: Action Polish
 - [ ] Action marketplace listing
@@ -68,8 +70,8 @@ The context engine is internal infrastructure, not a product.
 ## Phase 3: AI Integration (Weeks 6-7)
 
 ### Week 6: AI-Powered Navigation
+- [x] Per-file AI summaries via `--summarize` flag
 - [ ] Natural language search: "How does auth work?" → trace flow
-- [ ] AI-generated summaries for each module
 - [ ] Smart suggestions: "You're looking at auth, you might also need to see token validation"
 
 ### Week 7: AI Living Docs

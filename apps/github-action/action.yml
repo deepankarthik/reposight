@@ -1,0 +1,37 @@
+name: 'RepoLens'
+description: 'Auto-generate and update architecture documentation for your codebase'
+author: 'deepankarthik'
+
+inputs:
+  commit:
+    description: 'Auto-commit updated ARCHITECTURE.json to the repo'
+    required: false
+    default: 'true'
+  comment:
+    description: 'Post PR comment with architectural changes'
+    required: false
+    default: 'true'
+  config:
+    description: 'Path to .repolensrc.json config file'
+    required: false
+    default: '.repolensrc.json'
+  output-dir:
+    description: 'Directory to write output files'
+    required: false
+    default: '.'
+  include-mermaid:
+    description: 'Generate Mermaid dependency diagrams'
+    required: false
+    default: 'true'
+  summarize:
+    description: 'Generate AI-powered file summaries (requires AI_PROVIDER_API_KEY)'
+    required: false
+    default: 'false'
+
+branding:
+  icon: 'search'
+  color: 'blue'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
