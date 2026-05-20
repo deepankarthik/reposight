@@ -160,3 +160,9 @@
 
 - fix: remove prepublish/postpublish scripts, restore workspace deps
 
+## v0.1.5 - 2026-05-20
+
+### Bug Fixes
+
+- fix(release): promote prerelease to stable on patch bump
+
