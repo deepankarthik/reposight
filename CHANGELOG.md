@@ -154,3 +154,9 @@
 
 - chore: remove accidentally committed tarball
 
+## v0.1.5-alpha.0 - 2026-05-20
+
+### Bug Fixes
+
+- fix: remove prepublish/postpublish scripts, restore workspace deps
+
