@@ -4,7 +4,10 @@ import * as github from "@actions/github";
 import * as exec from "@actions/exec";
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface JsonFileEntry {
   path: string;
