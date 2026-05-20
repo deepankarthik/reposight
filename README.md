@@ -32,6 +32,19 @@ Or use without installing:
 npx repolens scan .
 ```
 
+## Why RepoLens?
+
+| | RepoLens | CodeSee | Sourcegraph |
+|---|---|---|---|
+| **Cost** | Free, open-source | $49+/user/month | $49+/user/month |
+| **Setup** | `npx repolens scan .` | SaaS signup, GitHub app | Self-host or cloud |
+| **Data** | Stays in your repo | Stored on their servers | Stored on their servers |
+| **AI** | Optional, delta-only | Required | Required |
+| **Offline** | Full support | No | No |
+| **Self-hosted** | Yes | No | Limited |
+
+**RepoLens is the `prettier` of architecture docs** — run it, get docs, done. No SaaS, no signup, no pricing tiers.
+
 ## Features
 
 - **Multi-language scanning** — TypeScript/JavaScript (AST), Python, Go, Rust, Java (regex)
@@ -42,7 +55,7 @@ npx repolens scan .
 - **Heuristic summaries** — Every file gets an automatic description using comments, symbols, and imports (zero AI cost)
 - **AI-powered summaries** — Optional `--summarize` flag for LLM-generated explanations
 - **Content-level diffs** — Compare git refs with symbol/import tracking
-- **Interactive web UI** — Visual graph, architecture layers, search, and cross-references
+- **Interactive web UI** — Visual graph, architecture layers, search, dark/light mode, and cross-references
 - **GitHub Action** — Auto-generate and update architecture docs on every push and PR
 
 ## CLI Commands
@@ -61,6 +74,7 @@ Scan a repository and generate architecture documentation.
 | `--target-file <path>` | Score files relative to this target |
 | `--include <patterns...>` | Only include matching files |
 | `--exclude <patterns...>` | Exclude matching files |
+| `--files <paths...>` | Scan only these specific files |
 | `--summarize` | AI-powered file summaries (requires API key) |
 
 **Outputs:**
@@ -88,9 +102,11 @@ The web UI (`apps/web/public/index.html`) provides a visual way to explore any c
 1. **Graph View** — Clickable import graph. Click nodes to see symbols, imports, and summaries.
 2. **Architecture View** — Auto-detected layers (Presentation, Business Logic, Data, etc.).
 3. **Data Flow** — Trace dependencies from entry points through the codebase.
-4. **Search** — Find files, symbols, or concepts with keyboard navigation.
-5. **Source Viewer** — View file contents with syntax highlighting.
-6. **Export** — Download the graph as a PNG image.
+4. **Diff View** — Compare architecture between git refs to see what changed.
+5. **Search** — Find files, symbols, comments, or concepts with keyboard navigation.
+6. **Source Viewer** — View file contents with syntax highlighting.
+7. **Dark/Light Mode** — Toggle between themes.
+8. **Export** — Download the graph as a PNG image.
 
 **No server required** — open `index.html` directly in your browser. It reads `ARCHITECTURE.json` from the same directory.
 
@@ -118,7 +134,7 @@ jobs:
 **AI summaries are delta-only** — when `summarize: true`, only changed files get AI summaries. Unchanged files keep their existing summaries. This keeps API costs low even on large repos. Set `AI_PROVIDER_API_KEY` as a repo secret to enable.
 
 **What it does:**
-- **On push:** Scans the repo, updates `ARCHITECTURE.json`, and commits it back. Preserves existing AI summaries.
+- **On push:** Scans only changed files, surgically updates `ARCHITECTURE.json`, preserves existing AI summaries.
 - **On PR:** Compares the PR branch against the base branch and posts a comment showing added/removed/modified files with symbol and import changes.
 
 ## Configuration

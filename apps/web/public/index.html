@@ -5,90 +5,178 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RepoLens Explorer</title>
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-tertiary: #1a1a24;
+      --bg-hover: #2a2a3a;
+      --border: #222;
+      --border-light: #333;
+      --text-primary: #ddd;
+      --text-secondary: #888;
+      --text-muted: #666;
+      --text-dim: #444;
+      --accent: #4a9eff;
+      --accent-hover: #3a8eef;
+      --green: #67c23a;
+      --red: #ff6b6b;
+      --orange: #e6a23c;
+      --purple: #9b64d3;
+      --shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    html.light {
+      --bg-primary: #f5f5f5;
+      --bg-secondary: #fff;
+      --bg-tertiary: #f9f9f9;
+      --bg-hover: #f0f0f0;
+      --border: #e0e0e0;
+      --border-light: #ddd;
+      --text-primary: #333;
+      --text-secondary: #666;
+      --text-muted: #888;
+      --text-dim: #999;
+      --accent: #1a73e8;
+      --accent-hover: #1557b0;
+      --green: #2e7d32;
+      --red: #c62828;
+      --orange: #e65100;
+      --purple: #7b1fa2;
+      --shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #0a0a0f; color: #ddd; }
-    header { background: #12121a; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222; }
-    header h1 { font-size: 18px; font-weight: 600; color: #4a9eff; }
-    header .subtitle { color: #666; font-size: 12px; margin-left: 12px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height: 100vh; display: flex; flex-direction: column; background: var(--bg-primary); color: var(--text-primary); transition: background 0.2s, color 0.2s; }
+
+    header { background: var(--bg-secondary); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 18px; font-weight: 600; color: var(--accent); }
+    header .subtitle { color: var(--text-muted); font-size: 12px; margin-left: 12px; }
     .header-left { display: flex; align-items: center; }
     .tabs { display: flex; gap: 4px; margin-left: 20px; }
-    .tab { padding: 6px 14px; border-radius: 6px; background: transparent; border: 1px solid #333; color: #888; cursor: pointer; font-size: 13px; }
-    .tab.active { background: #4a9eff; color: white; border-color: #4a9eff; }
-    .tab:hover:not(.active) { background: #1a1a24; color: #ddd; }
+    .tab { padding: 6px 14px; border-radius: 6px; background: transparent; border: 1px solid var(--border-light); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+    .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .tab:hover:not(.active) { background: var(--bg-tertiary); color: var(--text-primary); }
     .search-bar { display: flex; gap: 10px; align-items: center; position: relative; }
-    .search-bar input { padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a24; color: white; width: 250px; font-size: 14px; }
-    .search-bar input::placeholder { color: #555; }
-    .search-bar input:focus { outline: none; border-color: #4a9eff; }
-    .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: #1a1a24; border: 1px solid #333; border-radius: 8px; max-height: 400px; overflow-y: auto; display: none; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .search-bar input { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-tertiary); color: var(--text-primary); width: 250px; font-size: 14px; }
+    .search-bar input::placeholder { color: var(--text-muted); }
+    .search-bar input:focus { outline: none; border-color: var(--accent); }
+    .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 8px; max-height: 400px; overflow-y: auto; display: none; z-index: 100; box-shadow: var(--shadow); }
     .search-dropdown.visible { display: block; }
-    .search-result { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #222; }
+    .search-result { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
     .search-result:last-child { border-bottom: none; }
-    .search-result:hover, .search-result.active { background: #2a2a3a; }
-    .search-result-type { font-size: 10px; text-transform: uppercase; color: #666; margin-bottom: 2px; }
-    .search-result-title { font-size: 13px; color: #ddd; }
-    .search-result-title mark { background: #4a9eff33; color: #4a9eff; padding: 0 2px; border-radius: 2px; }
-    .search-result-subtitle { font-size: 11px; color: #666; margin-top: 2px; }
-    .export-btn { padding: 6px 12px; border-radius: 6px; background: #2a2a3a; border: 1px solid #333; color: #888; cursor: pointer; font-size: 12px; margin-left: 8px; }
-    .export-btn:hover { background: #3a3a4a; color: #ddd; }
-    .crossref-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; }
-    .crossref-section h3 { font-size: 13px; color: #666; text-transform: uppercase; margin-bottom: 8px; }
-    .crossref-item { padding: 6px 0; font-size: 12px; color: #888; cursor: pointer; }
-    .crossref-item:hover { color: #4a9eff; }
-    .crossref-file { color: #4a9eff; font-size: 11px; }
-    .crossref-line { color: #666; margin-left: 8px; }
-    .file-content { background: #0a0a0f; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 12px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; max-height: 400px; overflow-y: auto; white-space: pre; }
-    .file-content .line-num { color: #444; user-select: none; margin-right: 12px; }
+    .search-result:hover, .search-result.active { background: var(--bg-hover); }
+    .search-result-type { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+    .search-result-title { font-size: 13px; color: var(--text-primary); }
+    .search-result-title mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); padding: 0 2px; border-radius: 2px; }
+    .search-result-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .btn { padding: 6px 12px; border-radius: 6px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-secondary); cursor: pointer; font-size: 12px; margin-left: 8px; }
+    .btn:hover { background: var(--bg-hover); filter: brightness(1.2); color: var(--text-primary); }
+    .btn-sm { margin: 0; padding: 2px 8px; font-size: 11px; }
+
+    .main { flex: 1; display: flex; overflow: hidden; }
+    #graph { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); }
+    #architecture { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; padding: 20px; }
+    #dataflow { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; }
+    #diff { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; padding: 20px; }
+    .sidebar { width: 380px; background: var(--bg-secondary); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+    .sidebar h3 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+
+    .file-path { font-size: 15px; color: var(--accent); margin-bottom: 8px; font-weight: 500; word-break: break-all; }
+    .language-tag { display: inline-block; background: var(--bg-hover); color: var(--text-secondary); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 12px; }
+    .summary-box { background: var(--bg-tertiary); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; color: color-mix(in srgb, var(--text-primary) 80%, transparent); }
+    .section { margin-bottom: 16px; }
+    .symbol-tag { display: inline-block; background: color-mix(in srgb, var(--bg-secondary) 80%, var(--bg-tertiary)); color: var(--text-secondary); padding: 4px 8px; border-radius: 4px; font-size: 11px; margin: 2px; border: 1px solid var(--border-light); }
+    .symbol-tag.fn { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+    .symbol-tag.cls { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 40%, transparent); }
+    .symbol-tag.int { color: var(--purple); border-color: color-mix(in srgb, var(--purple) 40%, transparent); }
+    .symbol-tag.var { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+    .import-link { display: block; color: var(--text-muted); font-size: 12px; padding: 4px 0; text-decoration: none; cursor: pointer; }
+    .import-link:hover { color: var(--accent); }
+    .empty-state { color: var(--text-dim); text-align: center; padding: 60px 20px; font-size: 14px; }
+    .stats { display: flex; gap: 15px; margin-bottom: 20px; }
+    .stat { text-align: center; background: var(--bg-tertiary); padding: 12px 16px; border-radius: 8px; flex: 1; }
+    .stat-value { font-size: 22px; font-weight: 600; color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+    .legend { display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .arch-layer { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .arch-layer h4 { font-size: 14px; margin-bottom: 8px; }
+    .arch-layer .files { display: flex; flex-wrap: wrap; gap: 6px; }
+    .arch-file { background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-size: 11px; color: var(--text-secondary); cursor: pointer; }
+    .arch-file:hover { background: var(--accent); color: white; }
+    .arch-connections { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
+    .arch-conn { font-size: 12px; color: var(--text-muted); }
+    .arch-conn span { color: var(--accent); }
+
+    .flow-section { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .flow-section h4 { font-size: 14px; color: var(--accent); margin-bottom: 8px; }
+    .flow-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: var(--text-secondary); }
+    .flow-arrow { color: var(--accent); font-weight: bold; }
+    .flow-role { background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+    .flow-search { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-tertiary); color: var(--text-primary); width: 100%; font-size: 13px; }
+    .flow-search:focus { outline: none; border-color: var(--accent); }
+
+    .file-content { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-top: 12px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; max-height: 400px; overflow-y: auto; white-space: pre; }
+    .file-content .line-num { color: var(--text-dim); user-select: none; margin-right: 12px; }
     .file-content .kw { color: #c678dd; }
     .file-content .str { color: #98c379; }
     .file-content .cmt { color: #5c6370; font-style: italic; }
     .file-content .fn { color: #61afef; }
     .file-content .num { color: #d19a66; }
     .file-content .op { color: #56b6c2; }
-    .file-content .hl-line { background: #4a9eff22; display: block; margin: 0 -12px; padding: 0 12px; }
-    .main { flex: 1; display: flex; overflow: hidden; }
-    #graph { flex: 1; background: #08080c; }
-    #architecture { flex: 1; background: #08080c; display: none; overflow: auto; padding: 20px; }
-    #dataflow { flex: 1; background: #08080c; display: none; }
-    .sidebar { width: 380px; background: #12121a; border-left: 1px solid #222; overflow-y: auto; padding: 20px; }
-    .sidebar h3 { font-size: 13px; color: #666; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
-    .file-path { font-size: 15px; color: #4a9eff; margin-bottom: 8px; font-weight: 500; word-break: break-all; }
-    .language-tag { display: inline-block; background: #2a2a3a; color: #888; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 12px; }
-    .summary-box { background: #1a1a24; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; color: #bbb; }
-    .section { margin-bottom: 16px; }
-    .symbol-tag { display: inline-block; background: #1e1e2a; color: #aaa; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin: 2px; border: 1px solid #333; }
-    .symbol-tag.fn { color: #67c23a; border-color: #3d6e3d; }
-    .symbol-tag.cls { color: #e6a23c; border-color: #6e5230; }
-    .symbol-tag.int { color: #9b64d3; border-color: #4a3069; }
-    .symbol-tag.var { color: #4a9eff; border-color: #2a4a6e; }
-    .import-link { display: block; color: #666; font-size: 12px; padding: 4px 0; text-decoration: none; cursor: pointer; }
-    .import-link:hover { color: #4a9eff; }
-    .empty-state { color: #444; text-align: center; padding: 60px 20px; font-size: 14px; }
-    .stats { display: flex; gap: 15px; margin-bottom: 20px; }
-    .stat { text-align: center; background: #1a1a24; padding: 12px 16px; border-radius: 8px; flex: 1; }
-    .stat-value { font-size: 22px; font-weight: 600; color: #4a9eff; }
-    .stat-label { font-size: 10px; color: #666; text-transform: uppercase; margin-top: 4px; }
-    .legend { display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; flex-wrap: wrap; }
-    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #666; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .arch-layer { background: #12121a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .arch-layer h4 { font-size: 14px; margin-bottom: 8px; }
-    .arch-layer .files { display: flex; flex-wrap: wrap; gap: 6px; }
-    .arch-file { background: #1a1a24; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #888; cursor: pointer; }
-    .arch-file:hover { background: #4a9eff; color: white; }
-    .arch-connections { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; }
-    .arch-conn { font-size: 12px; color: #666; }
-    .arch-conn span { color: #4a9eff; }
-    .loading { text-align: center; padding: 40px; color: #666; }
-    .flow-section { background: #12121a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .flow-section h4 { font-size: 14px; color: #4a9eff; margin-bottom: 8px; }
-    .flow-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #888; }
-    .flow-arrow { color: #4a9eff; font-weight: bold; }
-    .flow-role { background: #1a1a24; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
-    .flow-role.source { color: #67c23a; border: 1px solid #3d6e3d; }
-    .flow-role.target { color: #e6a23c; border: 1px solid #6e5230; }
-    .flow-role.pass-through { color: #9b64d3; border: 1px solid #4a3069; }
+    .file-content .hl-line { background: color-mix(in srgb, var(--accent) 15%, transparent); display: block; margin: 0 -12px; padding: 0 12px; }
+    html.light .file-content .kw { color: #7c3aed; }
+    html.light .file-content .str { color: #16a34a; }
+    html.light .file-content .cmt { color: #9ca3af; }
+    html.light .file-content .fn { color: #2563eb; }
+    html.light .file-content .num { color: #d97706; }
+    html.light .file-content .op { color: #0891b2; }
+
+    .crossref-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
+    .crossref-section h3 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .crossref-item { padding: 6px 0; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+    .crossref-item:hover { color: var(--accent); }
+    .crossref-file { color: var(--accent); font-size: 11px; }
+    .crossref-line { color: var(--text-muted); margin-left: 8px; }
+
+    .diff-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .diff-controls input { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-tertiary); color: var(--text-primary); font-size: 13px; width: 200px; }
+    .diff-controls input:focus { outline: none; border-color: var(--accent); }
+    .diff-controls button { padding: 8px 16px; border-radius: 6px; background: var(--accent); border: none; color: white; cursor: pointer; font-size: 13px; }
+    .diff-controls button:hover { background: var(--accent-hover); }
+    .diff-controls button:disabled { background: var(--border-light); color: var(--text-muted); cursor: not-allowed; }
+    .diff-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .diff-stat { background: var(--bg-tertiary); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; text-align: center; }
+    .diff-stat.added { border-left: 3px solid var(--green); }
+    .diff-stat.removed { border-left: 3px solid var(--red); }
+    .diff-stat.modified { border-left: 3px solid var(--orange); }
+    .diff-stat.unchanged { border-left: 3px solid var(--text-muted); }
+    .diff-stat-value { font-size: 22px; font-weight: 600; color: var(--accent); }
+    .diff-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+    .diff-file { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .diff-file.added { border-left: 3px solid var(--green); }
+    .diff-file.removed { border-left: 3px solid var(--red); }
+    .diff-file.modified { border-left: 3px solid var(--orange); }
+    .diff-file-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .diff-file-path { font-size: 14px; color: var(--accent); font-weight: 500; word-break: break-all; }
+    .diff-file-badge { font-size: 10px; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .diff-file-badge.added { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+    .diff-file-badge.removed { background: color-mix(in srgb, var(--red) 20%, transparent); color: var(--red); }
+    .diff-file-badge.modified { background: color-mix(in srgb, var(--orange) 20%, transparent); color: var(--orange); }
+    .diff-section { margin-top: 8px; }
+    .diff-section h5 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    .diff-change { font-size: 12px; padding: 4px 0; }
+    .diff-change.added { color: var(--green); }
+    .diff-change.removed { color: var(--red); }
+    .diff-change::before { margin-right: 6px; font-weight: bold; }
+    .diff-change.added::before { content: '+'; }
+    .diff-change.removed::before { content: '-'; }
+    .diff-empty { color: var(--text-dim); text-align: center; padding: 60px 20px; font-size: 14px; }
+    .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+
     @media (max-width: 1024px) {
       .sidebar { width: 320px; }
       .search-bar input { width: 200px; }
@@ -100,7 +188,7 @@
       .search-bar { width: 100%; }
       .search-bar input { width: 100%; }
       .main { flex-direction: column; }
-      .sidebar { width: 100%; max-height: 40vh; border-left: none; border-top: 1px solid #222; }
+      .sidebar { width: 100%; max-height: 40vh; border-left: none; border-top: 1px solid var(--border); }
       #graph, #architecture, #dataflow { min-height: 50vh; }
       .stats { flex-direction: column; gap: 8px; }
       .stat { padding: 8px 12px; }
@@ -126,18 +214,21 @@
         <button class="tab active" onclick="showTab('graph')">Graph</button>
         <button class="tab" onclick="showTab('architecture')">Architecture</button>
         <button class="tab" onclick="showTab('dataflow')">Data Flow</button>
+        <button class="tab" onclick="showTab('diff')">Diff</button>
       </div>
     </div>
     <div class="search-bar">
       <input type="text" id="search" placeholder="Search files or symbols..." autocomplete="off">
       <div class="search-dropdown" id="searchDropdown"></div>
-      <button class="export-btn" onclick="exportGraph()">Export PNG</button>
+      <button class="btn" onclick="exportGraph()">Export PNG</button>
+      <button class="btn" id="themeToggle" onclick="toggleTheme()">Light</button>
     </div>
   </header>
   <div class="main">
     <div id="graph"></div>
     <div id="architecture"></div>
     <div id="dataflow"></div>
+    <div id="diff"></div>
     <div class="sidebar" id="sidebar">
       <div class="empty-state">
         <p>Click a node to explore</p>
@@ -146,7 +237,15 @@
   </div>
 
   <script>
-    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    const LAYERS = [
+      { name: "Presentation", pattern: /\/(components|pages|views|ui|cli)\//i, color: "#4a9eff" },
+      { name: "Business Logic", pattern: /\/(hooks|middleware|services|controllers|handlers)\//i, color: "#67c23a" },
+      { name: "Utilities", pattern: /\/(utils|helpers|lib|common)\//i, color: "#e6a23c" },
+      { name: "Data Layer", pattern: /\/(models|db|repository|data)\//i, color: "#9b64d3" },
+      { name: "Infrastructure", pattern: /\/(config|types|constants|cache)\//i, color: "#888" },
+      { name: "Core", pattern: /\/(context-engine|shared|ai)\//i, color: "#ff6b6b" },
+      { name: "Other", pattern: /.*/, color: "#666" }
+    ];
 
     let network = null;
     let nodesDataSet = null;
@@ -156,18 +255,78 @@
     let repoData = null;
     let currentTab = 'graph';
     let layerColors = {};
+    let searchActiveIndex = -1;
+    let searchResults = [];
+    let searchIndex = [];
+    let crossRefIndex = {};
+    let importsMap = {};
+    let importedByMap = {};
+
+    function initTheme() {
+      const saved = localStorage.getItem('repolens-theme');
+      if (saved === 'light') {
+        document.documentElement.classList.add('light');
+        document.getElementById('themeToggle').textContent = 'Dark';
+      }
+    }
+
+    function toggleTheme() {
+      const isLight = document.documentElement.classList.toggle('light');
+      document.getElementById('themeToggle').textContent = isLight ? 'Dark' : 'Light';
+      localStorage.setItem('repolens-theme', isLight ? 'light' : 'dark');
+      if (network) {
+        const color = isLight ? '#333' : '#ddd';
+        nodesDataSet.update(allNodesData.map(n => ({ id: n.id, font: { color, size: 11 } })));
+      }
+    }
+
+    function getLayerForFile(filePath) {
+      for (const layer of LAYERS) {
+        if (layer.pattern.test(filePath)) return layer;
+      }
+      return LAYERS[LAYERS.length - 1];
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+    }
+
+    function escapeJs(str) {
+      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    }
+
+    function highlightText(text, query) {
+      if (!query) return escapeHtml(text);
+      const idx = text.toLowerCase().indexOf(query.toLowerCase());
+      if (idx === -1) return escapeHtml(text);
+      return escapeHtml(text.substring(0, idx)) + '<mark>' + escapeHtml(text.substring(idx, idx + query.length)) + '</mark>' + escapeHtml(text.substring(idx + query.length));
+    }
 
     async function loadRepoData() {
       try {
         const response = await fetch('./ARCHITECTURE.json');
         if (!response.ok) throw new Error('Failed to load');
         repoData = await response.json();
-        initGraph(repoData);
-      } catch (e) {
-        console.log('Using embedded data');
+      } catch {
         repoData = getEmbeddedData();
-        initGraph(repoData);
       }
+      buildAdjacencyMaps();
+      searchIndex = buildSearchIndex();
+      crossRefIndex = buildCrossRefIndex();
+      initGraph(repoData);
+    }
+
+    function buildAdjacencyMaps() {
+      importsMap = {};
+      importedByMap = {};
+      repoData.files.forEach(file => {
+        importsMap[file.path] = [];
+        importedByMap[file.path] = [];
+      });
+      allEdgesData.forEach(edge => {
+        if (importsMap[edge.from]) importsMap[edge.from].push(edge.to);
+        if (importedByMap[edge.to]) importedByMap[edge.to].push(edge.from);
+      });
     }
 
     function getEmbeddedData() {
@@ -175,30 +334,19 @@
         version: "0.1.0",
         summary: { includedFiles: 24 },
         files: [
-          { path: "packages/ai/src/doc-generator.ts", language: "typescript", summary: "AI document generation module. Defines functions for generating architecture summaries, trace explanations, and diff analysis using AI providers. Handles context formatting and provider communication with streaming support.", symbols: [{name:"callProvider",kind:"function",line:35},{name:"formatContext",kind:"function",line:46},{name:"generateArchitectureSummary",kind:"function",line:56},{name:"generateTraceExplanation",kind:"function",line:69},{name:"generateDiffAnalysis",kind:"function",line:83}], imports: ["@repolens/shared","./types.js"] },
-          { path: "packages/ai/src/index.ts", language: "typescript", summary: "Entry point for the AI module. Re-exports provider factory, local/remote providers, and document generation functions.", symbols: [], imports: ["./local-provider.js","./provider-factory.js","./remote-provider.js","./types.js","./summarize.js","./doc-generator.js"] },
-          { path: "packages/ai/src/local-provider.ts", language: "typescript", summary: "Dev-only AI provider that simulates streaming responses without requiring an API key. Defines LocalAIProvider class with streamChat and chat methods for testing.", symbols: [{name:"LocalAIProvider",kind:"class",line:21},{name:"streamChat",kind:"method",line:24},{name:"chat",kind:"method",line:39}], imports: ["./types.js"] },
-          { path: "packages/ai/src/provider-factory.ts", language: "typescript", summary: "Factory function for creating AI providers. Decides between local and remote providers based on API key configuration.", symbols: [{name:"createAIProvider",kind:"function",line:6}], imports: ["@repolens/shared","./local-provider.js","./remote-provider.js","./types.js"] },
-          { path: "packages/ai/src/remote-provider.ts", language: "typescript", summary: "Production AI provider that makes HTTP calls to OpenAI-compatible endpoints with SSE streaming. Includes SSRF protection with URL validation and domain allowlisting.", symbols: [{name:"RemoteAIProvider",kind:"class",line:55},{name:"validateBaseUrl",kind:"function",line:23},{name:"streamChat",kind:"method",line:62}], imports: ["@repolens/shared","./types.js"] },
-          { path: "packages/ai/src/types.ts", language: "typescript", summary: "Type definitions for the AI module. Defines AIProvider interface and AIStreamRequest types used across the package.", symbols: [{name:"AIProvider",kind:"interface",line:9},{name:"AIStreamRequest",kind:"interface",line:3}], imports: ["@repolens/shared"] },
-          { path: "packages/ai/src/summarize.ts", language: "typescript", summary: "Summarization utilities for AI document generation. Creates summarization functions with configurable parameters.", symbols: [{name:"createSummarizeFn",kind:"function",line:6}], imports: ["@repolens/shared","./types.js"] },
-          { path: "packages/context-engine/src/cache.ts", language: "typescript", summary: "File caching system with mtime-based invalidation. Defines FileCache class for storing and retrieving cached file content and symbols.", symbols: [{name:"FileCache",kind:"class",line:5},{name:"get",kind:"method",line:12},{name:"set",kind:"method",line:20}], imports: [] },
-          { path: "packages/context-engine/src/chunker.ts", language: "typescript", summary: "File chunking utility that splits large files into manageable chunks for processing.", symbols: [{name:"chunkFile",kind:"function",line:3}], imports: [] },
-          { path: "packages/context-engine/src/cached-scanner.ts", language: "typescript", summary: "Core scanner that orchestrates file discovery, scoring, and reading. Implements heuristic file selection using import graphs, git recency, and directory proximity.", symbols: [{name:"scanRepository",kind:"function",line:264}], imports: ["./chunker.js","./ignore.js","./language.js","./symbol-extractor.js","./cache.js","./import-graph.js","./git-recent.js","./test-pairing.js","./proximity.js"] },
-          { path: "packages/context-engine/src/diff-analyzer.ts", language: "typescript", summary: "Content-level diff analysis between two repository states. Generates unified diffs, tracks symbol additions/removals, and formats diff reports.", symbols: [{name:"analyzeDiff",kind:"function",line:80},{name:"formatDiffReport",kind:"function",line:140}], imports: ["./symbol-extractor.js","./language.js"] },
-          { path: "packages/context-engine/src/ignore.ts", language: "typescript", summary: "File filtering system with .gitignore and .repolensignore support. Handles negation patterns, root anchoring, and generated file detection.", symbols: [{name:"shouldIgnorePath",kind:"function",line:152},{name:"isGeneratedFile",kind:"function",line:167},{name:"loadIgnoreFiles",kind:"function",line:127}], imports: [] },
-          { path: "packages/context-engine/src/import-graph.ts", language: "typescript", summary: "Import graph builder that resolves dependencies between files. Tracks imported-by relationships and calculates transitive import scores.", symbols: [{name:"buildImportGraph",kind:"function",line:107},{name:"getImportScore",kind:"function",line:180},{name:"getTransitiveImportScore",kind:"function",line:187}], imports: [] },
-          { path: "packages/context-engine/src/index.ts", language: "typescript", summary: "Entry point for the context-engine module. Re-exports all public APIs including scanner, cache, symbol extractor, and report generator.", symbols: [], imports: ["./cache.js","./chunker.js","./ignore.js","./language.js","./symbol-extractor.js","./import-graph.js","./git-recent.js","./proximity.js","./test-pairing.js","./cached-scanner.js","./report-generator.js","./diff-analyzer.js","./json-output.js","./progress.js","./symbol-crossref.js"] },
-          { path: "packages/context-engine/src/language.ts", language: "typescript", summary: "Language detection utilities based on file extensions. Maps extensions to language identifiers and determines if files are likely text.", symbols: [{name:"languageFromPath",kind:"function",line:31},{name:"isLikelyTextFile",kind:"function",line:35}], imports: [] },
-          { path: "packages/context-engine/src/progress.ts", language: "typescript", summary: "Progress reporting utilities for scan operations. Formats progress updates and creates progress callbacks.", symbols: [{name:"formatProgress",kind:"function",line:13},{name:"createProgressCallback",kind:"function",line:7}], imports: [] },
-          { path: "packages/context-engine/src/report-generator.ts", language: "typescript", summary: "Architecture report generator that produces Markdown reports with Mermaid diagrams. Includes overview, module map, key symbols, and dependency graphs.", symbols: [{name:"generateArchitectureReport",kind:"function",line:216},{name:"generateMermaidDiagram",kind:"function",line:240}], imports: ["./import-graph.js"] },
-          { path: "packages/context-engine/src/symbol-crossref.ts", language: "typescript", summary: "Symbol cross-referencing system that tracks which symbols reference which across files. Builds symbol dependency graphs.", symbols: [{name:"buildSymbolCrossReference",kind:"function",line:11},{name:"getTopReferencedSymbols",kind:"function",line:82},{name:"getSymbolDependencies",kind:"function",line:95}], imports: ["@repolens/shared"] },
-          { path: "packages/context-engine/src/symbol-extractor.ts", language: "typescript", summary: "Multi-language symbol extraction using AST (TypeScript/JavaScript) and regex patterns (Python, Go, Rust, Java). Extracts functions, classes, interfaces, and imports.", symbols: [{name:"extractSymbols",kind:"function",line:379},{name:"extractImportsFromSource",kind:"function",line:405}], imports: ["typescript"] },
-          { path: "packages/context-engine/src/test-pairing.ts", language: "typescript", summary: "Test file pairing utilities that match test files with their source files. Calculates test pairing scores for heuristic file selection.", symbols: [{name:"isTestFile",kind:"function",line:4},{name:"isSourceFile",kind:"function",line:14},{name:"getTestPairScore",kind:"function",line:61}], imports: [] },
-          { path: "packages/context-engine/src/json-output.ts", language: "typescript", summary: "JSON report generator that produces structured output for programmatic consumption. Includes files, symbols, imports, import graph, and key symbols.", symbols: [{name:"generateJsonReport",kind:"function",line:78}], imports: ["@repolens/shared","./import-graph.js"] },
-          { path: "packages/shared/src/config.ts", language: "typescript", summary: "Configuration management with environment variable loading and .repolensrc.json file support. Includes schema validation and config merging.", symbols: [{name:"readConfigFromEnv",kind:"function",line:41},{name:"loadConfigFile",kind:"function",line:68},{name:"mergeConfig",kind:"function",line:78},{name:"validateConfig",kind:"function",line:83}], imports: [] },
-          { path: "packages/shared/src/types.ts", language: "typescript", summary: "Core type definitions for the entire project. Defines CodeSymbol, ContextFile, RepositoryContext, and ImportGraphNode interfaces.", symbols: [{name:"CodeSymbol",kind:"interface",line:3},{name:"ContextFile",kind:"interface",line:9},{name:"RepositoryContext",kind:"interface",line:26}], imports: [] },
-          { path: "apps/cli/src/index.ts", language: "typescript", summary: "CLI entry point with scan, trace, diff, and init commands. Orchestrates repository scanning, report generation, and AI integration.", symbols: [{name:"runScan",kind:"function",line:21},{name:"runTrace",kind:"function",line:90},{name:"runDiff",kind:"function",line:118}], imports: ["@repolens/shared","@repolens/context-engine","@repolens/ai"] },
+          { path: "packages/ai/src/doc-generator.ts", language: "typescript", summary: "AI document generation module. Defines functions for generating architecture summaries, trace explanations, and diff analysis using AI providers.", symbols: [{name:"callProvider",kind:"function",line:35},{name:"generateArchitectureSummary",kind:"function",line:56}], imports: ["@repolens/shared","./types.js"] },
+          { path: "packages/ai/src/index.ts", language: "typescript", summary: "Entry point for the AI module. Re-exports provider factory, local/remote providers, and document generation functions.", symbols: [], imports: ["./local-provider.js","./provider-factory.js","./remote-provider.js","./types.js"] },
+          { path: "packages/ai/src/provider-factory.ts", language: "typescript", summary: "Factory function for creating AI providers. Decides between local and remote providers based on API key configuration.", symbols: [{name:"createAIProvider",kind:"function",line:6}], imports: ["@repolens/shared","./local-provider.js","./remote-provider.js"] },
+          { path: "packages/ai/src/remote-provider.ts", language: "typescript", summary: "Production AI provider that makes HTTP calls to OpenAI-compatible endpoints with SSE streaming.", symbols: [{name:"RemoteAIProvider",kind:"class",line:55},{name:"streamChat",kind:"method",line:62}], imports: ["@repolens/shared","./types.js"] },
+          { path: "packages/ai/src/types.ts", language: "typescript", summary: "Type definitions for the AI module. Defines AIProvider interface and AIStreamRequest types.", symbols: [{name:"AIProvider",kind:"interface",line:9}], imports: ["@repolens/shared"] },
+          { path: "packages/context-engine/src/cache.ts", language: "typescript", summary: "File caching system with mtime-based invalidation.", symbols: [{name:"FileCache",kind:"class",line:5},{name:"get",kind:"method",line:12},{name:"set",kind:"method",line:20}], imports: [] },
+          { path: "packages/context-engine/src/cached-scanner.ts", language: "typescript", summary: "Core scanner that orchestrates file discovery, scoring, and reading.", symbols: [{name:"scanRepository",kind:"function",line:264}], imports: ["./chunker.js","./ignore.js","./language.js","./symbol-extractor.js","./cache.js","./import-graph.js"] },
+          { path: "packages/context-engine/src/import-graph.ts", language: "typescript", summary: "Import graph builder that resolves dependencies between files.", symbols: [{name:"buildImportGraph",kind:"function",line:107}], imports: [] },
+          { path: "packages/context-engine/src/index.ts", language: "typescript", summary: "Entry point for the context-engine module. Re-exports all public APIs.", symbols: [], imports: ["./cache.js","./cached-scanner.js","./import-graph.js","./symbol-extractor.js"] },
+          { path: "packages/context-engine/src/symbol-extractor.ts", language: "typescript", summary: "Multi-language symbol extraction using AST (TypeScript/JavaScript) and regex patterns (Python, Go, Rust, Java).", symbols: [{name:"extractSymbols",kind:"function",line:379}], imports: ["typescript"] },
+          { path: "packages/shared/src/config.ts", language: "typescript", summary: "Configuration management with environment variable loading and .repolensrc.json file support.", symbols: [{name:"readConfigFromEnv",kind:"function",line:41},{name:"loadConfigFile",kind:"function",line:68}], imports: [] },
+          { path: "packages/shared/src/types.ts", language: "typescript", summary: "Core type definitions for the entire project.", symbols: [{name:"CodeSymbol",kind:"interface",line:3},{name:"ContextFile",kind:"interface",line:9}], imports: [] },
+          { path: "apps/cli/src/index.ts", language: "typescript", summary: "CLI entry point with scan, trace, diff, and init commands.", symbols: [{name:"runScan",kind:"function",line:21},{name:"runTrace",kind:"function",line:90}], imports: ["@repolens/shared","@repolens/context-engine","@repolens/ai"] },
         ]
       };
     }
@@ -207,82 +355,44 @@
       currentTab = tab;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
-      
       document.getElementById('graph').style.display = tab === 'graph' ? 'block' : 'none';
       document.getElementById('architecture').style.display = tab === 'architecture' ? 'block' : 'none';
       document.getElementById('dataflow').style.display = tab === 'dataflow' ? 'block' : 'none';
-      
-      if (tab === 'architecture' && repoData) {
-        renderArchitecture();
-      }
-      if (tab === 'dataflow' && repoData) {
-        renderDataFlow();
-      }
-    }
-
-    function getLayerForFile(filePath) {
-      const layers = [
-        { name: "Presentation", pattern: /\/(components|pages|views|ui|cli)\//i, color: "#4a9eff" },
-        { name: "Business Logic", pattern: /\/(hooks|middleware|services|controllers|handlers)\//i, color: "#67c23a" },
-        { name: "Utilities", pattern: /\/(utils|helpers|lib|common)\//i, color: "#e6a23c" },
-        { name: "Data Layer", pattern: /\/(models|db|repository|data)\//i, color: "#9b64d3" },
-        { name: "Infrastructure", pattern: /\/(config|types|constants|cache)\//i, color: "#888" },
-        { name: "Core", pattern: /\/(context-engine|shared|ai)\//i, color: "#ff6b6b" },
-        { name: "Other", pattern: /.*/, color: "#666" }
-      ];
-
-      for (const layer of layers) {
-        if (layer.pattern.test(filePath)) {
-          return layer;
-        }
-      }
-      return layers[layers.length - 1];
+      document.getElementById('diff').style.display = tab === 'diff' ? 'block' : 'none';
+      if (tab === 'architecture' && repoData) renderArchitecture();
+      if (tab === 'dataflow' && repoData) renderDataFlow();
+      if (tab === 'diff' && repoData) renderDiffView();
     }
 
     function initGraph(data) {
-      searchIndex = buildSearchIndex();
-      crossRefIndex = buildCrossRefIndex();
       const container = document.getElementById('graph');
       const sidebar = document.getElementById('sidebar');
 
-      allNodesData = data.files.map((file) => {
+      allNodesData = data.files.map(file => {
         const name = file.path.split('/').pop();
         const hasSymbols = file.symbols && file.symbols.length > 0;
         const layer = getLayerForFile(file.path);
         const isEntry = file.path.includes('index.ts');
-        
         layerColors[file.path] = layer.color;
-
-        return {
-          id: file.path,
-          label: name,
-          title: file.path,
-          size: isEntry ? 35 : (hasSymbols ? 22 : 16),
-          color: layer.color,
-          font: { color: '#ddd', size: 11 }
-        };
+        return { id: file.path, label: name, title: file.path, size: isEntry ? 35 : (hasSymbols ? 22 : 16), color: layer.color, font: { color: '#ddd', size: 11 } };
       });
 
       allEdgesData = [];
       const filePaths = data.files.map(f => f.path);
       const pathToIndex = {};
       filePaths.forEach((p, i) => pathToIndex[p] = i);
-      
-      data.files.forEach((file, idx) => {
+
+      data.files.forEach(file => {
         if (!file.imports || file.imports.length === 0) return;
-        
         file.imports.forEach(imp => {
           if (!imp.startsWith('.') && !imp.startsWith('/')) return;
-          
           const baseDir = file.path.substring(0, file.path.lastIndexOf('/'));
           const cleanImport = imp.replace('./', '').replace('.js', '.ts').replace('.jsx', '.tsx');
-          
           const exactMatch = baseDir + '/' + cleanImport;
           if (pathToIndex[exactMatch] !== undefined) {
             allEdgesData.push({ from: file.path, to: exactMatch, color: { color: '#2a2a3a' }, width: 1 });
             return;
           }
-          
           const importFilename = cleanImport.split('/').pop();
           const possibleMatches = filePaths.filter(p => p.endsWith(importFilename) && p !== file.path);
           if (possibleMatches.length > 0) {
@@ -294,40 +404,31 @@
       nodesDataSet = new vis.DataSet(allNodesData);
       edgesDataSet = new vis.DataSet(allEdgesData);
 
-      const options = {
+      network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, {
         nodes: { shape: 'dot', font: { face: 'arial' } },
         edges: { arrows: { to: { enabled: true, scaleFactor: 0.5 } }, width: 1, smooth: { type: 'curvedCW', roundness: 0.1 } },
         physics: { stabilization: { iterations: 100, fit: true }, barnesHut: { gravitationalConstant: -2000, springLength: 120 } },
         interaction: { hover: true, tooltipDelay: 100, dragNodes: true, dragView: true, zoomView: true }
-      };
+      });
 
-      network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options);
-
-      network.on('click', function(params) {
-        if (params.nodes.length > 0) {
-          showFileDetails(params.nodes[0], data);
-        }
+      network.on('click', params => {
+        if (params.nodes.length > 0) showFileDetails(params.nodes[0], data);
       });
 
       const totalSymbols = data.files.reduce((sum, f) => sum + (f.symbols ? f.symbols.length : 0), 0);
-      
       const layerLegend = Object.entries(layerColors).slice(0, 6).map(([path, color]) => {
         const layer = getLayerForFile(path);
         return `<div class="legend-item"><div class="legend-dot" style="background:${color}"></div> ${layer.name}</div>`;
       }).join('');
-      
+
       sidebar.innerHTML = `
         <div class="stats">
           <div class="stat"><div class="stat-value">${data.summary.includedFiles || data.files.length}</div><div class="stat-label">Files</div></div>
           <div class="stat"><div class="stat-value">${totalSymbols}</div><div class="stat-label">Symbols</div></div>
           <div class="stat"><div class="stat-value">${allEdgesData.length}</div><div class="stat-label">Connections</div></div>
         </div>
-        <div class="empty-state">
-          <p>Click a node to explore</p>
-        </div>
-        <div class="legend">
-          ${layerLegend}
-        </div>
+        <div class="empty-state"><p>Click a node to explore</p></div>
+        <div class="legend">${layerLegend}</div>
       `;
     }
 
@@ -341,11 +442,7 @@
       const layer = getLayerForFile(filePath);
 
       let html = '';
-      
-      if (file.summary) {
-        html += `<div class="summary-box">${escapeHtml(file.summary)}</div>`;
-      }
-
+      if (file.summary) html += `<div class="summary-box">${escapeHtml(file.summary)}</div>`;
       html += `
         <div class="stats">
           <div class="stat"><div class="stat-value">${symbolCount}</div><div class="stat-label">Symbols</div></div>
@@ -355,57 +452,47 @@
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
           <div class="language-tag">${escapeHtml(file.language || 'unknown')}</div>
           <div class="flow-role" style="color:${layer.color};border-color:${layer.color};cursor:default">${escapeHtml(layer.name)} Layer</div>
-          <button class="export-btn" style="margin:0;padding:2px 8px;font-size:11px" onclick="viewFileSource('${escapeJs(file.path)}')">View Source</button>
+          <button class="btn btn-sm" onclick="viewFileSource('${escapeJs(file.path)}')">View Source</button>
+          <button class="btn btn-sm" onclick="traceDataFlowFrom('${escapeJs(file.path)}')">Trace Flow</button>
         </div>
         <div id="file-content-viewer"></div>
       `;
 
       if (file.symbols && file.symbols.length > 0) {
-        html += `<div class="section"><h3>Symbols</h3>`;
+        html += '<div class="section"><h3>Symbols</h3>';
         file.symbols.forEach(s => {
           const cls = s.kind === 'function' ? 'fn' : s.kind === 'class' ? 'cls' : s.kind === 'interface' ? 'int' : s.kind === 'method' ? 'fn' : 'var';
           const refCount = (crossRefIndex[s.name.toLowerCase()] || []).length;
-          const refBadge = refCount > 1 ? ` <span style="color:#666;font-size:10px">(${refCount})</span>` : '';
+          const refBadge = refCount > 1 ? ` <span style="color:var(--text-muted);font-size:10px">(${refCount})</span>` : '';
           html += `<span class="symbol-tag ${cls}" style="cursor:pointer" onclick="showSymbolCrossRef('${escapeJs(s.name)}', ${s.line})">${escapeHtml(s.kind)} ${escapeHtml(s.name)}${s.line ? ' (L' + s.line + ')' : ''}${refBadge}</span>`;
         });
-        html += `</div>`;
+        html += '</div>';
       }
 
       if (file.imports && file.imports.length > 0) {
-        html += `<div class="section"><h3>Imports</h3>`;
-        file.imports.forEach(imp => {
-          html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">→ ${escapeHtml(imp)}</a>`;
-        });
-        html += `</div>`;
+        html += '<div class="section"><h3>Imports</h3>';
+        file.imports.forEach(imp => { html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">→ ${escapeHtml(imp)}</a>`; });
+        html += '</div>';
       }
 
       const importedBy = allEdgesData.filter(e => e.to === filePath).map(e => e.from);
       if (importedBy.length > 0) {
         html += `<div class="section"><h3>Imported By (${importedBy.length})</h3>`;
-        importedBy.forEach(imp => {
-          const name = imp.split('/').pop();
-          html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">← ${escapeHtml(name)}</a>`;
-        });
-        html += `</div>`;
+        importedBy.forEach(imp => { html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">← ${escapeHtml(imp.split('/').pop())}</a>`; });
+        html += '</div>';
       }
 
-      html += `
-        <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:${layer.color}"></div> ${layer.name}</div>
-        </div>
-      `;
-
+      html += `<div class="legend"><div class="legend-item"><div class="legend-dot" style="background:${layer.color}"></div> ${layer.name}</div></div>`;
       sidebar.innerHTML = html;
     }
 
     function highlightNode(imp) {
       const cleanImport = imp.replace('./', '').replace('.js', '.ts').replace('.jsx', '.tsx');
-      const matches = allNodesData.filter(n => 
-        n.id.includes(cleanImport) || 
+      const matches = allNodesData.filter(n =>
+        n.id.includes(cleanImport) ||
         n.id.endsWith(imp.split('/').pop().replace('.js', '.ts')) ||
         imp.includes(n.id.split('/').pop())
       );
-      
       if (matches.length > 0) {
         network.selectNodes([matches[0].id]);
         network.focus(matches[0].id, { animation: true, scale: 1.2 });
@@ -413,145 +500,101 @@
       }
     }
 
-    function detectLayers(files) {
-      const layers = [
-        { name: "Presentation (UI)", pattern: /\/(components|pages|views|ui|cli)\//i, color: "#4a9eff", files: [] },
-        { name: "Business Logic", pattern: /\/(hooks|middleware|services|controllers|handlers)\//i, color: "#67c23a", files: [] },
-        { name: "Utilities", pattern: /\/(utils|helpers|lib|common)\//i, color: "#e6a23c", files: [] },
-        { name: "Data Layer", pattern: /\/(models|db|repository|data)\//i, color: "#9b64d3", files: [] },
-        { name: "Infrastructure", pattern: /\/(config|types|constants|cache)\//i, color: "#888", files: [] },
-        { name: "Core Engine", pattern: /\/(context-engine|shared|ai)\//i, color: "#ff6b6b", files: [] },
-        { name: "Other", pattern: /.*/, color: "#666", files: [] }
-      ];
-
-      files.forEach(file => {
-        for (const layer of layers) {
-          if (layer.pattern.test(file.path)) {
-            layer.files.push(file);
-            break;
-          }
-        }
-      });
-
-      return layers.filter(l => l.files.length > 0);
-    }
-
     function renderArchitecture() {
       const container = document.getElementById('architecture');
-      const layers = detectLayers(repoData.files);
-      
-      let html = '<div style="max-width: 800px; margin: 0 auto;">';
-      html += '<h2 style="color: #4a9eff; margin-bottom: 20px;">Architecture Layers</h2>';
-      
-      for (let i = 0; i < layers.length; i++) {
-        const layer = layers[i];
+      const layers = LAYERS.map(l => ({ ...l, files: [] }));
+      repoData.files.forEach(file => {
+        for (const layer of layers) {
+          if (layer.pattern.test(file.path)) { layer.files.push(file); break; }
+        }
+      });
+      const activeLayers = layers.filter(l => l.files.length > 0);
+
+      let html = '<div style="max-width: 800px; margin: 0 auto;"><h2 style="color: var(--accent); margin-bottom: 20px;">Architecture Layers</h2>';
+      activeLayers.forEach((layer, i) => {
         html += `<div class="arch-layer" style="border-left: 3px solid ${layer.color};">`;
         html += `<h4 style="color: ${layer.color};">${layer.name} (${layer.files.length} files)</h4>`;
         html += '<div class="files">';
-        layer.files.forEach(f => {
-          html += `<span class="arch-file" onclick="highlightNode('${escapeJs(f.path)}')">${escapeHtml(f.path.split('/').pop())}</span>`;
-        });
+        layer.files.forEach(f => { html += `<span class="arch-file" onclick="highlightNode('${escapeJs(f.path)}')">${escapeHtml(f.path.split('/').pop())}</span>`; });
         html += '</div>';
-        
-        if (i < layers.length - 1) {
-          html += `<div class="arch-connections">`;
-          html += `<span style="color: #666;">↓ depends on</span> <span>${layers[i + 1].name}</span>`;
-          html += `</div>`;
+        if (i < activeLayers.length - 1) {
+          html += `<div class="arch-connections"><span style="color: var(--text-muted);">↓ depends on</span> <span>${activeLayers[i + 1].name}</span></div>`;
         }
-        
         html += '</div>';
-      }
-      
+      });
       html += '</div>';
       container.innerHTML = html;
+    }
+
+    function traceFlowFrom(filePath, maxDepth = 5) {
+      const visited = new Set();
+      const flowChain = [];
+      function trace(fp, depth) {
+        if (visited.has(fp) || depth > maxDepth) return;
+        visited.add(fp);
+        const file = repoData.files.find(f => f.path === fp);
+        flowChain.push({ path: fp, layer: getLayerForFile(fp), depth, importsCount: (importsMap[fp] || []).length });
+        (importsMap[fp] || []).forEach(imp => trace(imp, depth + 1));
+      }
+      trace(filePath);
+      return flowChain;
+    }
+
+    function renderFlowChain(flowChain) {
+      let html = '<div style="margin-top: 12px;">';
+      flowChain.forEach(step => {
+        const indent = step.depth * 20;
+        const arrow = step.depth > 0 ? '<span class="flow-arrow">→</span>' : '';
+        html += `<div class="flow-item" style="padding-left: ${indent}px;">`;
+        html += `${arrow} <span class="flow-role" style="color:${step.layer.color};border-color:${step.layer.color}">${escapeHtml(step.layer.name)}</span>`;
+        html += `<span class="arch-file" onclick="highlightNode('${escapeJs(step.path)}')" style="margin-left: 8px;">${escapeHtml(step.path.split('/').pop())}</span>`;
+        html += `<span style="color:var(--text-muted);font-size:10px;margin-left:6px;">(${step.importsCount} imports)</span>`;
+        html += '</div>';
+      });
+      html += '</div>';
+      return html;
     }
 
     function renderDataFlow() {
       const container = document.getElementById('dataflow');
       const sidebar = document.getElementById('sidebar');
-      
-      // Build adjacency list for data flow analysis
-      const importsMap = {};
-      const importedByMap = {};
-      
-      repoData.files.forEach(file => {
-        importsMap[file.path] = [];
-        importedByMap[file.path] = [];
-      });
-      
-      allEdgesData.forEach(edge => {
-        if (importsMap[edge.from]) {
-          importsMap[edge.from].push(edge.to);
-        }
-        if (importedByMap[edge.to]) {
-          importedByMap[edge.to].push(edge.from);
-        }
-      });
 
-      // Find entry points (files that import others but aren't imported by many)
-      const entryPoints = repoData.files.filter(f => 
-        importsMap[f.path].length > 0 && importedByMap[f.path].length <= 1
-      ).slice(0, 5);
+      const scored = repoData.files.map(f => ({
+        file: f,
+        score: (importsMap[f.path] || []).length - (importedByMap[f.path] || []).length * 0.5,
+        importsCount: (importsMap[f.path] || []).length,
+        importedByCount: (importedByMap[f.path] || []).length
+      })).filter(s => s.importsCount > 0).sort((a, b) => b.score - a.score).slice(0, 10);
 
       let html = '<div style="max-width: 900px; margin: 0 auto; padding: 20px;">';
-      html += '<h2 style="color: #4a9eff; margin-bottom: 20px;">Data Flow Analysis</h2>';
-      html += '<p style="color: #666; margin-bottom: 20px;">Click any entry point to trace its data flow through the codebase.</p>';
+      html += '<h2 style="color: var(--accent); margin-bottom: 12px;">Data Flow Analysis</h2>';
+      html += '<p style="color: var(--text-muted); margin-bottom: 16px;">Entry points ranked by import influence. Click to trace dependencies.</p>';
+      html += '<div style="margin-bottom: 16px;"><input type="text" id="flow-search" placeholder="Search any file to trace from..." class="flow-search" oninput="filterFlowFiles(this.value)"></div>';
+      html += '<div id="flow-entry-points">';
 
-      entryPoints.forEach(ep => {
-        const layer = getLayerForFile(ep.path);
-        html += `<div class="flow-section" style="border-left: 3px solid ${layer.color};">`;
-        html += `<h4 style="color: ${layer.color};">${escapeHtml(ep.path.split('/').pop())}</h4>`;
-        html += `<p style="color: #888; font-size: 12px; margin-bottom: 12px;">${escapeHtml(ep.summary || 'No summary available.')}</p>`;
-        
-        // Trace flow
-        const visited = new Set();
-        const flowChain = [];
-        
-        function traceFlow(filePath, depth = 0) {
-          if (visited.has(filePath) || depth > 4) return;
-          visited.add(filePath);
-          
-          const file = repoData.files.find(f => f.path === filePath);
-          const fileLayer = getLayerForFile(filePath);
-          
-          flowChain.push({ path: filePath, layer: fileLayer, depth, imports: importsMap[filePath] || [] });
-          
-          (importsMap[filePath] || []).forEach(imp => {
-            traceFlow(imp, depth + 1);
-          });
-        }
-        
-        traceFlow(ep.path);
-        
-        html += '<div style="margin-top: 12px;">';
-        flowChain.forEach((step, idx) => {
-          const indent = step.depth * 20;
-          const arrow = step.depth > 0 ? '<span class="flow-arrow">→</span>' : '';
-          html += `<div class="flow-item" style="padding-left: ${indent}px;">`;
-          html += `${arrow} <span class="flow-role" style="color:${step.layer.color};border-color:${step.layer.color}">${escapeHtml(step.layer.name)}</span>`;
-          html += `<span class="arch-file" onclick="highlightNode('${escapeJs(step.path)}')" style="margin-left: 8px;">${escapeHtml(step.path.split('/').pop())}</span>`;
-          html += `</div>`;
-        });
+      scored.forEach(ep => {
+        const layer = getLayerForFile(ep.file.path);
+        const flowChain = traceFlowFrom(ep.file.path, 5);
+        html += `<div class="flow-section" style="border-left: 3px solid ${layer.color};" data-path="${escapeHtml(ep.file.path)}">`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">`;
+        html += `<h4 style="color: ${layer.color};margin:0;">${escapeHtml(ep.file.path.split('/').pop())}</h4>`;
+        html += `<span style="font-size:10px;color:var(--text-muted);">imports: ${ep.importsCount} | used by: ${ep.importedByCount}</span>`;
         html += '</div>';
-        
+        html += `<p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;">${escapeHtml(ep.file.path)}</p>`;
+        html += `<p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;">${escapeHtml(ep.file.summary?.substring(0, 100) || 'No summary.')}</p>`;
+        html += renderFlowChain(flowChain);
         html += '</div>';
       });
 
-      html += '</div>';
+      html += '</div></div>';
       container.innerHTML = html;
 
-      // Update sidebar with flow stats
-      const totalFlows = entryPoints.length;
-      const totalConnections = allEdgesData.length;
-      
       sidebar.innerHTML = `
         <div class="stats">
-          <div class="stat"><div class="stat-value">${totalFlows}</div><div class="stat-label">Entry Points</div></div>
-          <div class="stat"><div class="stat-value">${totalConnections}</div><div class="stat-label">Connections</div></div>
+          <div class="stat"><div class="stat-value">${scored.length}</div><div class="stat-label">Entry Points</div></div>
+          <div class="stat"><div class="stat-value">${allEdgesData.length}</div><div class="stat-label">Connections</div></div>
         </div>
-        <div class="empty-state">
-          <p>Data flow shows how data moves through the codebase from entry points to dependencies.</p>
-        </div>
+        <div class="empty-state"><p>Data flow shows how data moves through the codebase from entry points to dependencies.</p></div>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div> Presentation</div>
           <div class="legend-item"><div class="legend-dot" style="background:#67c23a"></div> Business Logic</div>
@@ -562,33 +605,39 @@
       `;
     }
 
-    let searchActiveIndex = -1;
-    let searchResults = [];
-    let searchIndex = [];
-    let crossRefIndex = {};
-
-    function highlightText(text, query) {
-      if (!query) return escapeHtml(text);
-      const idx = text.toLowerCase().indexOf(query.toLowerCase());
-      if (idx === -1) return escapeHtml(text);
-      return escapeHtml(text.substring(0, idx)) + '<mark>' + escapeHtml(text.substring(idx, idx + query.length)) + '</mark>' + escapeHtml(text.substring(idx + query.length));
+    function filterFlowFiles(query) {
+      const q = query.toLowerCase();
+      document.querySelectorAll('#flow-entry-points .flow-section').forEach(el => {
+        el.style.display = el.getAttribute('data-path').toLowerCase().includes(q) ? 'block' : 'none';
+      });
     }
 
-    function escapeHtml(text) {
-      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
-    }
+    function traceDataFlowFrom(filePath) {
+      showTab('dataflow');
+      const container = document.getElementById('dataflow');
+      const file = repoData.files.find(f => f.path === filePath);
+      const layer = getLayerForFile(filePath);
+      const flowChain = traceFlowFrom(filePath, 6);
 
-    function escapeJs(str) {
-      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+      let html = '<div style="max-width: 900px; margin: 0 auto; padding: 20px;">';
+      html += `<h2 style="color: var(--accent); margin-bottom: 12px;">Data Flow from ${escapeHtml(filePath.split('/').pop())}</h2>`;
+      html += `<p style="color: var(--text-muted); margin-bottom: 16px;">${escapeHtml(filePath)}</p>`;
+      html += `<div class="flow-section" style="border-left: 3px solid ${layer.color};">`;
+      html += renderFlowChain(flowChain);
+      html += '</div></div>';
+      container.innerHTML = html;
     }
 
     function buildSearchIndex() {
       const index = [];
       repoData.files.forEach(file => {
-        index.push({ type: 'file', path: file.path, title: file.path.split('/').pop(), subtitle: file.summary?.substring(0, 80) || file.language || '' });
+        index.push({ type: 'file', path: file.path, title: file.path.split('/').pop(), subtitle: file.summary?.substring(0, 80) || file.language || '', content: file.summary || '' });
+        if (file.fileComment) {
+          index.push({ type: 'comment', path: file.path, title: file.path.split('/').pop() + ' (comment)', subtitle: file.fileComment.substring(0, 100), content: file.fileComment });
+        }
         if (file.symbols) {
           file.symbols.forEach(s => {
-            index.push({ type: 'symbol', path: file.path, title: s.name, subtitle: `${s.kind} in ${file.path.split('/').pop()}`, line: s.line });
+            index.push({ type: 'symbol', path: file.path, title: s.name, subtitle: `${s.kind} in ${file.path.split('/').pop()}`, line: s.line, content: s.comment || '' });
           });
         }
       });
@@ -609,9 +658,7 @@
         if (!file.imports) return;
         file.imports.forEach(imp => {
           const impName = imp.replace(/\.js$/, '').replace(/^\.\/?/, '').split('/').pop().toLowerCase();
-          if (crossRef[impName]) {
-            crossRef[impName].push({ file: file.path, kind: 'import', line: null });
-          }
+          if (crossRef[impName]) crossRef[impName].push({ file: file.path, kind: 'import', line: null });
         });
       });
       return crossRef;
@@ -624,31 +671,27 @@
 
       if (!query) {
         dropdown.classList.remove('visible');
-        if (nodesDataSet) {
-          nodesDataSet.update(allNodesData.map(n => ({ id: n.id, color: layerColors[n.id] || n.color, size: n.size })));
-        }
+        if (nodesDataSet) nodesDataSet.update(allNodesData.map(n => ({ id: n.id, color: layerColors[n.id] || n.color, size: n.size })));
         return;
       }
 
       searchResults = searchIndex.filter(item =>
         item.title.toLowerCase().includes(query) ||
         item.path.toLowerCase().includes(query) ||
-        item.subtitle.toLowerCase().includes(query)
-      ).slice(0, 15);
+        item.subtitle.toLowerCase().includes(query) ||
+        item.content.toLowerCase().includes(query)
+      ).slice(0, 20);
 
-      if (searchResults.length === 0) {
-        dropdown.classList.remove('visible');
-        return;
-      }
+      if (searchResults.length === 0) { dropdown.classList.remove('visible'); return; }
 
       let html = '';
       searchResults.forEach((result, idx) => {
-        const icon = result.type === 'file' ? 'FILE' : result.subtitle.includes('function') || result.subtitle.includes('method') ? 'FN' : result.subtitle.includes('class') ? 'CLS' : result.subtitle.includes('interface') ? 'INT' : 'SYM';
+        const icon = result.type === 'file' ? 'FILE' : result.type === 'comment' ? 'CMT' : result.subtitle.includes('function') || result.subtitle.includes('method') ? 'FN' : result.subtitle.includes('class') ? 'CLS' : result.subtitle.includes('interface') ? 'INT' : 'SYM';
         html += `<div class="search-result" data-index="${idx}" onmouseenter="setSearchActive(${idx})" onclick="selectSearchResult(${idx})">`;
         html += `<div class="search-result-type">${icon} ${result.type}</div>`;
         html += `<div class="search-result-title">${highlightText(result.title, query)}</div>`;
         html += `<div class="search-result-subtitle">${highlightText(result.subtitle, query)}</div>`;
-        html += `</div>`;
+        html += '</div>';
       });
       dropdown.innerHTML = html;
       dropdown.classList.add('visible');
@@ -656,51 +699,32 @@
       const matches = allNodesData.filter(n =>
         n.id.toLowerCase().includes(query) ||
         (repoData?.files.find(f => f.path === n.id)?.symbols?.some(s => s.name.toLowerCase().includes(query))) ||
-        (repoData?.files.find(f => f.path === n.id)?.summary?.toLowerCase().includes(query))
+        (repoData?.files.find(f => f.path === n.id)?.summary?.toLowerCase().includes(query)) ||
+        (repoData?.files.find(f => f.path === n.id)?.fileComment?.toLowerCase().includes(query)) ||
+        (repoData?.files.find(f => f.path === n.id)?.imports?.some(i => i.toLowerCase().includes(query)))
       );
 
-      const updates = allNodesData.map(n => ({
+      nodesDataSet.update(allNodesData.map(n => ({
         id: n.id,
         color: matches.includes(n) ? '#ffd700' : '#222',
         size: matches.includes(n) ? n.size + 10 : n.size * 0.6
-      }));
-      nodesDataSet.update(updates);
+      })));
 
-      if (matches.length > 0) {
-        network.focus(matches[0].id, { animation: true });
-      }
+      if (matches.length > 0) network.focus(matches[0].id, { animation: true });
     });
 
     document.getElementById('search').addEventListener('keydown', function(e) {
       const dropdown = document.getElementById('searchDropdown');
       if (!dropdown.classList.contains('visible')) return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        searchActiveIndex = Math.min(searchActiveIndex + 1, searchResults.length - 1);
-        updateSearchActive();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        searchActiveIndex = Math.max(searchActiveIndex - 1, 0);
-        updateSearchActive();
-      } else if (e.key === 'Enter' && searchActiveIndex >= 0) {
-        e.preventDefault();
-        selectSearchResult(searchActiveIndex);
-      } else if (e.key === 'Escape') {
-        dropdown.classList.remove('visible');
-        this.blur();
-      }
+      if (e.key === 'ArrowDown') { e.preventDefault(); searchActiveIndex = Math.min(searchActiveIndex + 1, searchResults.length - 1); updateSearchActive(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); searchActiveIndex = Math.max(searchActiveIndex - 1, 0); updateSearchActive(); }
+      else if (e.key === 'Enter' && searchActiveIndex >= 0) { e.preventDefault(); selectSearchResult(searchActiveIndex); }
+      else if (e.key === 'Escape') { dropdown.classList.remove('visible'); this.blur(); }
     });
 
-    function setSearchActive(idx) {
-      searchActiveIndex = idx;
-      updateSearchActive();
-    }
-
+    function setSearchActive(idx) { searchActiveIndex = idx; updateSearchActive(); }
     function updateSearchActive() {
-      document.querySelectorAll('.search-result').forEach((el, i) => {
-        el.classList.toggle('active', i === searchActiveIndex);
-      });
+      document.querySelectorAll('.search-result').forEach((el, i) => el.classList.toggle('active', i === searchActiveIndex));
       const active = document.querySelector('.search-result.active');
       if (active) active.scrollIntoView({ block: 'nearest' });
     }
@@ -708,48 +732,36 @@
     function selectSearchResult(idx) {
       const result = searchResults[idx];
       if (!result) return;
-
       document.getElementById('searchDropdown').classList.remove('visible');
       document.getElementById('search').value = result.title;
-
-      if (result.type === 'file') {
-        highlightNode(result.path);
-      } else {
-        highlightNode(result.path);
-        setTimeout(() => showSymbolCrossRef(result.title, result.line), 300);
-      }
+      highlightNode(result.path);
+      if (result.type !== 'file') setTimeout(() => showSymbolCrossRef(result.title, result.line), 300);
     }
 
     function showSymbolCrossRef(symbolName, line) {
       const key = symbolName.toLowerCase();
       const refs = crossRefIndex[key];
       if (!refs || refs.length <= 1) return;
-
-      const sidebar = document.getElementById('sidebar');
       const otherRefs = refs.filter(r => r.line !== line || r.kind === 'import');
-
       if (otherRefs.length === 0) return;
 
+      const sidebar = document.getElementById('sidebar');
       let html = sidebar.innerHTML;
-      html += `<div class="crossref-section">`;
-      html += `<h3>Referenced In (${otherRefs.length})</h3>`;
+      html += `<div class="crossref-section"><h3>Referenced In (${otherRefs.length})</h3>`;
       otherRefs.slice(0, 10).forEach(ref => {
-        const fileName = ref.file.split('/').pop();
         html += `<div class="crossref-item" onclick="highlightNode('${escapeJs(ref.file)}')">`;
-        html += `<span class="crossref-file">${escapeHtml(fileName)}</span>`;
+        html += `<span class="crossref-file">${escapeHtml(ref.file.split('/').pop())}</span>`;
         if (ref.line) html += `<span class="crossref-line">L${ref.line}</span>`;
-        html += `</div>`;
+        html += '</div>';
       });
-      html += `</div>`;
+      html += '</div>';
       sidebar.innerHTML = html;
     }
 
     document.addEventListener('click', function(e) {
       const dropdown = document.getElementById('searchDropdown');
       const searchInput = document.getElementById('search');
-      if (!dropdown.contains(e.target) && e.target !== searchInput) {
-        dropdown.classList.remove('visible');
-      }
+      if (!dropdown.contains(e.target) && e.target !== searchInput) dropdown.classList.remove('visible');
     });
 
     function exportGraph() {
@@ -764,15 +776,13 @@
     async function viewFileSource(filePath) {
       const container = document.getElementById('file-content-viewer');
       container.innerHTML = '<div class="loading">Loading source...</div>';
-
       try {
         const response = await fetch('./' + filePath);
         if (!response.ok) throw new Error('File not found');
         const source = await response.text();
-        const highlighted = highlightSyntax(source, filePath);
-        container.innerHTML = `<div class="file-content">${highlighted}</div>`;
-      } catch (e) {
-        container.innerHTML = '<div style="color:#666;font-size:12px;padding:8px 0">Source not available (serve via HTTP server to view)</div>';
+        container.innerHTML = `<div class="file-content">${highlightSyntax(source, filePath)}</div>`;
+      } catch {
+        container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">Source not available (serve via HTTP server to view)</div>';
       }
     }
 
@@ -786,33 +796,151 @@
 
       return lines.map((line, idx) => {
         let escaped = escapeHtml(line);
-
         if (isTsJs || isPy || isGo || isRust) {
           const keywords = isTsJs ? /\b(const|let|var|function|class|interface|type|import|export|from|return|if|else|for|while|switch|case|break|continue|try|catch|finally|throw|new|this|async|await|yield|typeof|instanceof|in|of|extends|implements|private|public|protected|static|readonly|abstract|enum|namespace|module|declare|as|is|keyof|infer|void|null|undefined|never|any|string|number|boolean|object|symbol|true|false)\b/g :
                            isPy ? /\b(def|class|import|from|return|if|elif|else|for|while|try|except|finally|raise|with|as|yield|async|await|lambda|pass|break|continue|and|or|not|is|in|True|False|None|self|print|global|nonlocal|assert|del)\b/g :
-                           isGo ? /\b(func|package|import|var|const|type|struct|interface|map|chan|go|defer|return|if|else|for|range|switch|case|break|continue|fallthrough|select|go|defer|nil|true|false|bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|byte|rune|error|make|new|len|cap|append|copy|delete|close|panic|recover)\b/g :
-                           /\b(fn|let|mut|pub|use|mod|struct|enum|impl|trait|type|const|static|ref|self|Self|super|crate|where|for|loop|while|if|else|match|return|async|await|move|dyn|unsafe|extern|impl|impl|impl|true|false|Some|None|Ok|Err|Vec|String|str|i32|i64|u32|u64|f32|f64|bool|char|Box|Rc|Arc|Option|Result)\b/g;
-
+                           isGo ? /\b(func|package|import|var|const|type|struct|interface|map|chan|go|defer|return|if|else|for|range|switch|case|break|continue|fallthrough|select|nil|true|false|bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|byte|rune|error|make|new|len|cap|append|copy|delete|close|panic|recover)\b/g :
+                           /\b(fn|let|mut|pub|use|mod|struct|enum|impl|trait|type|const|static|ref|self|Self|super|crate|where|for|loop|while|if|else|match|return|async|await|move|dyn|unsafe|extern|true|false|Some|None|Ok|Err|Vec|String|str|i32|i64|u32|u64|f32|f64|bool|char|Box|Rc|Arc|Option|Result)\b/g;
           escaped = escaped.replace(keywords, '<span class="kw">$1</span>');
-
-          const strings = /(["'`])(?:(?!\1|\\).|\\.)*?\1/g;
-          escaped = escaped.replace(strings, '<span class="str">$&</span>');
-
+          escaped = escaped.replace(/(["'`])(?:(?!\1|\\).|\\.)*?\1/g, '<span class="str">$&</span>');
           const comments = isPy ? /(#.*$)/g : /(\/\/.*$|\/\*[\s\S]*?\*\/)/g;
           escaped = escaped.replace(comments, '<span class="cmt">$&</span>');
-
-          const numbers = /\b(\d+\.?\d*)\b/g;
-          escaped = escaped.replace(numbers, '<span class="num">$1</span>');
-
-          const fnCalls = /\b([a-zA-Z_]\w*)\s*(?=\()/g;
-          escaped = escaped.replace(fnCalls, '<span class="fn">$1</span>(');
+          escaped = escaped.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+          escaped = escaped.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, '<span class="fn">$1</span>(');
         }
-
-        const lineNum = `<span class="line-num">${idx + 1}</span>`;
-        return `${lineNum}${escaped}`;
+        return `<span class="line-num">${idx + 1}</span>${escaped}`;
       }).join('\n');
     }
 
+    function renderDiffView() {
+      const container = document.getElementById('diff');
+      container.innerHTML = `
+        <div style="max-width: 900px; margin: 0 auto;">
+          <h2 style="color: var(--accent); margin-bottom: 16px;">Architecture Diff</h2>
+          <p style="color: var(--text-muted); margin-bottom: 20px;">Compare two ARCHITECTURE.json files to see architectural changes.</p>
+          <div class="diff-controls">
+            <input type="file" id="diffBaseFile" accept=".json" style="font-size:13px;">
+            <input type="file" id="diffHeadFile" accept=".json" style="font-size:13px;">
+            <button onclick="loadDiffFromFiles()">Compare</button>
+          </div>
+          <div id="diff-content"></div>
+        </div>
+      `;
+    }
+
+    function loadDiffFromFiles() {
+      const baseInput = document.getElementById('diffBaseFile');
+      const headInput = document.getElementById('diffHeadFile');
+      const content = document.getElementById('diff-content');
+
+      if (!baseInput.files.length || !headInput.files.length) {
+        content.innerHTML = '<div class="diff-empty">Select both base and head JSON files.</div>';
+        return;
+      }
+
+      const reader = (file) => new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(JSON.parse(r.result));
+        r.onerror = reject;
+        r.readAsText(file);
+      });
+
+      Promise.all([reader(baseInput.files[0]), reader(headInput.files[0])])
+        .then(([baseData, headData]) => {
+          const diff = computeDiff(baseData, headData);
+          renderDiffResults(diff, baseInput.files[0].name, headInput.files[0].name, content);
+        })
+        .catch(e => { content.innerHTML = `<div class="diff-empty">Error: ${escapeHtml(e.message)}</div>`; });
+    }
+
+    function computeDiff(baseData, headData) {
+      const baseMap = new Map(baseData.files.map(f => [f.path, f]));
+      const headMap = new Map(headData.files.map(f => [f.path, f]));
+      const added = [], removed = [], modified = [], unchanged = [];
+
+      for (const [path, headFile] of headMap) {
+        if (!baseMap.has(path)) { added.push(headFile); }
+        else {
+          const changes = compareFiles(baseMap.get(path), headFile);
+          if (changes.length > 0) modified.push({ path, changes });
+          else unchanged.push(path);
+        }
+      }
+      for (const [path] of baseMap) { if (!headMap.has(path)) removed.push(path); }
+      return { added, removed, modified, unchanged, baseCount: baseData.files.length, headCount: headData.files.length };
+    }
+
+    function compareFiles(base, head) {
+      const changes = [];
+      if (base.summary !== head.summary) changes.push({ type: 'summary' });
+
+      const baseSymbols = new Map((base.symbols || []).map(s => [`${s.kind}:${s.name}`, s]));
+      const headSymbols = new Map((head.symbols || []).map(s => [`${s.kind}:${s.name}`, s]));
+
+      for (const [key, headSym] of headSymbols) {
+        if (!baseSymbols.has(key)) changes.push({ type: 'symbol-added', name: headSym.name, kind: headSym.kind });
+        else {
+          const baseSym = baseSymbols.get(key);
+          if (baseSym.comment !== headSym.comment && (baseSym.comment || headSym.comment)) changes.push({ type: 'symbol-comment-changed', name: headSym.name, kind: headSym.kind });
+        }
+      }
+      for (const [key, baseSym] of baseSymbols) { if (!headSymbols.has(key)) changes.push({ type: 'symbol-removed', name: baseSym.name, kind: baseSym.kind }); }
+
+      const baseImports = new Set(base.imports || []);
+      const headImports = new Set(head.imports || []);
+      for (const imp of headImports) { if (!baseImports.has(imp)) changes.push({ type: 'import-added', name: imp }); }
+      for (const imp of baseImports) { if (!headImports.has(imp)) changes.push({ type: 'import-removed', name: imp }); }
+      return changes;
+    }
+
+    function renderDiffResults(diff, baseName, headName, container) {
+      let html = `
+        <div class="diff-summary">
+          <div class="diff-stat added"><div class="diff-stat-value">${diff.added.length}</div><div class="diff-stat-label">Added</div></div>
+          <div class="diff-stat removed"><div class="diff-stat-value">${diff.removed.length}</div><div class="diff-stat-label">Removed</div></div>
+          <div class="diff-stat modified"><div class="diff-stat-value">${diff.modified.length}</div><div class="diff-stat-label">Modified</div></div>
+          <div class="diff-stat unchanged"><div class="diff-stat-value">${diff.unchanged.length}</div><div class="diff-stat-label">Unchanged</div></div>
+        </div>
+        <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">Comparing ${escapeHtml(baseName)} (${diff.baseCount} files) → ${escapeHtml(headName)} (${diff.headCount} files)</p>
+      `;
+
+      if (diff.added.length === 0 && diff.removed.length === 0 && diff.modified.length === 0) {
+        html += '<div class="diff-empty">No architectural changes detected.</div>';
+      } else {
+        if (diff.added.length > 0) {
+          html += '<h3 style="color:var(--green);margin:16px 0 8px;">New Files</h3>';
+          diff.added.forEach(f => {
+            html += `<div class="diff-file added"><div class="diff-file-header"><span class="diff-file-path">${escapeHtml(f.path)}</span><span class="diff-file-badge added">Added</span></div>`;
+            if (f.summary) html += `<p style="color:var(--text-secondary);font-size:12px;">${escapeHtml(f.summary.substring(0, 120))}${f.summary.length > 120 ? '...' : ''}</p>`;
+            html += '</div>';
+          });
+        }
+        if (diff.removed.length > 0) {
+          html += '<h3 style="color:var(--red);margin:16px 0 8px;">Removed Files</h3>';
+          diff.removed.forEach(path => { html += `<div class="diff-file removed"><div class="diff-file-header"><span class="diff-file-path">${escapeHtml(path)}</span><span class="diff-file-badge removed">Removed</span></div></div>`; });
+        }
+        if (diff.modified.length > 0) {
+          html += '<h3 style="color:var(--orange);margin:16px 0 8px;">Modified Files</h3>';
+          diff.modified.slice(0, 20).forEach(m => {
+            html += `<div class="diff-file modified"><div class="diff-file-header"><span class="diff-file-path">${escapeHtml(m.path)}</span><span class="diff-file-badge modified">${m.changes.length} change${m.changes.length > 1 ? 's' : ''}</span></div><div class="diff-section">`;
+            m.changes.slice(0, 8).forEach(c => {
+              if (c.type === 'summary') html += '<div class="diff-change modified">Summary changed</div>';
+              else if (c.type === 'symbol-added') html += `<div class="diff-change added">${escapeHtml(c.kind)} ${escapeHtml(c.name)}</div>`;
+              else if (c.type === 'symbol-removed') html += `<div class="diff-change removed">${escapeHtml(c.kind)} ${escapeHtml(c.name)}</div>`;
+              else if (c.type === 'symbol-comment-changed') html += `<div class="diff-change modified">${escapeHtml(c.kind)} ${escapeHtml(c.name)} comment changed</div>`;
+              else if (c.type === 'import-added') html += `<div class="diff-change added">import ${escapeHtml(c.name)}</div>`;
+              else if (c.type === 'import-removed') html += `<div class="diff-change removed">import ${escapeHtml(c.name)}</div>`;
+            });
+            if (m.changes.length > 8) html += `<div style="color:var(--text-muted);font-size:11px;padding:4px 0;">+${m.changes.length - 8} more changes</div>`;
+            html += '</div></div>';
+          });
+          if (diff.modified.length > 20) html += `<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">+${diff.modified.length - 20} more modified files</div>`;
+        }
+      }
+      container.innerHTML = html;
+    }
+
+    initTheme();
     loadRepoData();
   </script>
 </body>
