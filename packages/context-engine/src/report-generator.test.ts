@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateArchitectureReport, generateMermaidDiagram } from "./report-generator.js";
+import { generateArchitectureReport } from "./report-generator.js";
 import type { RepositoryContext } from "@reposight/shared";
 
 function makeContext(overrides?: Partial<RepositoryContext>): RepositoryContext {
@@ -95,42 +95,5 @@ describe("generateArchitectureReport", () => {
     };
     const report = generateArchitectureReport(context, { importGraph });
     expect(report).toContain("1");
-  });
-});
-
-describe("generateMermaidDiagram", () => {
-  it("should generate package-level diagram by default", () => {
-    const context = makeContext();
-    const diagram = generateMermaidDiagram(context);
-    expect(diagram).toContain("```mermaid");
-    expect(diagram).toContain("graph TD");
-  });
-
-  it("should generate file-level diagram when requested", () => {
-    const context = makeContext({
-      files: [
-        {
-          path: "src/index.ts",
-          absolutePath: "/test/repo/src/index.ts",
-          language: "typescript",
-          content: "export function main() {}",
-          size: 25,
-          symbols: [{ name: "main", kind: "function", line: 1 }],
-          imports: ["src/utils.ts"]
-        },
-        {
-          path: "src/utils.ts",
-          absolutePath: "/test/repo/src/utils.ts",
-          language: "typescript",
-          content: "export function helper() {}",
-          size: 28,
-          symbols: [{ name: "helper", kind: "function", line: 1 }],
-          imports: []
-        }
-      ]
-    });
-    const diagram = generateMermaidDiagram(context, true);
-    expect(diagram).toContain("src/index.ts");
-    expect(diagram).toContain("src/utils.ts");
   });
 });

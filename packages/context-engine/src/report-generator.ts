@@ -236,7 +236,3 @@ export function generateArchitectureReport(context: RepositoryContext, options?:
 
   return lines.join("\n");
 }
-
-export function generateMermaidDiagram(context: RepositoryContext, fileLevel = false): string {
-  return generateMermaidDependencyGraph(context.files, fileLevel);
-}

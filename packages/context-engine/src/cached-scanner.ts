@@ -6,7 +6,7 @@ import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile, setIncludeExcludePa
 import { isLikelyTextFile, languageFromPath } from "./language.js";
 import { extractSymbols, extractImportsFromSource } from "./symbol-extractor.js";
 import { FileCache } from "./cache.js";
-import { buildImportGraph, getImportScore, getTransitiveImportScore, type ImportGraph } from "./import-graph.js";
+import { buildImportGraph, getTransitiveImportScore, type ImportGraph } from "./import-graph.js";
 import { getRecentFiles, getRecencyScore, type RecentFileEntry, GIT_NOT_AVAILABLE } from "./git-recent.js";
 import { getTestPairScore, isTestFile, isSourceFile } from "./test-pairing.js";
 import { getDirectoryProximityScore, getSamePackageScore } from "./proximity.js";

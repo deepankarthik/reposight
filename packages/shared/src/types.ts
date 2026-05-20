@@ -1,5 +1,11 @@
 export type Language = "typescript" | "python" | "javascript" | "text";
 
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+  name?: string;
+}
+
 export interface CodeSymbol {
   name: string;
   kind: "function" | "class" | "interface" | "type" | "variable" | "method" | "unknown";
@@ -58,10 +64,4 @@ export interface PackageInfo {
   name: string;
   location: string;
   dependencies: string[];
-}
-
-export interface ChatMessage {
-  role: string;
-  content: string;
-  name?: string;
 }
