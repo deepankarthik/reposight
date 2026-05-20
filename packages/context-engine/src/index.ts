@@ -12,5 +12,4 @@ export * from "./report-generator.js";
 export * from "./diff-analyzer.js";
 export * from "./json-output.js";
 export * from "./progress.js";
-export * from "./symbol-crossref.js";
 export * from "./summary.js";

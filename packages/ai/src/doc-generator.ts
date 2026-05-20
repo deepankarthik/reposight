@@ -1,16 +1,4 @@
-import type { ChatMessage, RepositoryContext } from "@reposight/shared";
 import type { AIProvider } from "./types.js";
-
-const ARCHITECTURE_SUMMARY_PROMPT = `You are a senior software architect analyzing a codebase. Generate a concise architecture summary based on the repository context provided.
-
-Focus on:
-1. The overall structure and organization
-2. Key components and their responsibilities
-3. Data flow patterns
-4. Notable design patterns or architectural decisions
-5. Potential areas of concern (tight coupling, missing abstractions)
-
-Be specific, use concrete file and symbol names from the context. Keep it under 500 words.`;
 
 const TRACE_PROMPT = `You are a senior software engineer tracing code flow through a repository. Given a query about how something works in the codebase, trace the flow through the relevant files.
 
@@ -32,7 +20,7 @@ Focus on:
 
 Be specific about files, functions, and patterns. Keep it under 300 words.`;
 
-async function callProvider(provider: AIProvider, messages: ChatMessage[], model: string): Promise<string> {
+async function callProvider(provider: AIProvider, messages: Array<{ role: string; content: string }>, model: string): Promise<string> {
   if (provider.chat) {
     return await provider.chat({ messages, model, temperature: 0.1 });
   }
@@ -43,38 +31,20 @@ async function callProvider(provider: AIProvider, messages: ChatMessage[], model
   return chunks.join("");
 }
 
-function formatContext(context: RepositoryContext): string {
-  const files = context.files.slice(0, 20).map((f) => {
-    const symbols = f.symbols?.map((s) => `  - ${s.kind} ${s.name} (line ${s.line})`).join("\n") || "  (no symbols)";
-    const imports = f.imports?.length ? `  Imports: ${f.imports.join(", ")}` : "  Imports: none";
-    return `File: ${f.path}\n${imports}\n${symbols}`;
-  }).join("\n\n");
-
-  return `Repository: ${context.rootDir}\nFiles scanned: ${context.summary.scannedFiles}\nFiles included: ${context.summary.includedFiles}\n\n${files}`;
-}
-
-export async function generateArchitectureSummary(
-  provider: AIProvider,
-  context: RepositoryContext,
-  model: string
-): Promise<string> {
-  const messages: ChatMessage[] = [
-    { role: "system", content: ARCHITECTURE_SUMMARY_PROMPT },
-    { role: "user", content: formatContext(context) }
-  ];
-
-  return callProvider(provider, messages, model);
-}
-
 export async function generateTraceExplanation(
   provider: AIProvider,
-  context: RepositoryContext,
+  context: { files: Array<{ path: string; symbols?: Array<{ kind: string; name: string; line: number }> }> },
   query: string,
   model: string
 ): Promise<string> {
-  const messages: ChatMessage[] = [
+  const files = context.files.slice(0, 20).map((f) => {
+    const symbols = f.symbols?.map((s) => `  - ${s.kind} ${s.name} (line ${s.line})`).join("\n") || "  (no symbols)";
+    return `File: ${f.path}\n${symbols}`;
+  }).join("\n\n");
+
+  const messages = [
     { role: "system", content: TRACE_PROMPT },
-    { role: "user", content: `Query: ${query}\n\n${formatContext(context)}` }
+    { role: "user", content: `Query: ${query}\n\nFiles:\n${files}` }
   ];
 
   return callProvider(provider, messages, model);
@@ -82,14 +52,14 @@ export async function generateTraceExplanation(
 
 export async function generateDiffAnalysis(
   provider: AIProvider,
-  oldContext: RepositoryContext,
-  newContext: RepositoryContext,
+  oldContext: { files: Array<{ path: string }> },
+  newContext: { files: Array<{ path: string }> },
   model: string
 ): Promise<string> {
   const oldFiles = oldContext.files.map((f) => f.path).join("\n");
   const newFiles = newContext.files.map((f) => f.path).join("\n");
 
-  const messages: ChatMessage[] = [
+  const messages = [
     { role: "system", content: DIFF_ANALYSIS_PROMPT },
     { role: "user", content: `Old version files:\n${oldFiles}\n\nNew version files:\n${newFiles}` }
   ];

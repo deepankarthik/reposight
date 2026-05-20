@@ -59,3 +59,9 @@ export interface PackageInfo {
   location: string;
   dependencies: string[];
 }
+
+export interface ChatMessage {
+  role: string;
+  content: string;
+  name?: string;
+}

@@ -9,7 +9,6 @@ function makeEnvConfig(overrides: Partial<RepoLensConfig> = {}): RepoLensConfig 
     aiProviderModel: "gpt-4o-mini",
     maxContextFiles: 80,
     maxContextBytes: 120_000,
-    maxTokenBudget: 100_000,
     includeMermaid: true,
     maxFileBytes: 80_000,
     maxChunkChars: 6_000,
