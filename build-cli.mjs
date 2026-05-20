@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { writeFileSync, chmodSync } from "node:fs";
+import { writeFileSync, chmodSync, copyFileSync, mkdirSync } from "node:fs";
 
 const nodeBuiltins = [
   "fs", "path", "os", "crypto", "stream", "util", "events",
@@ -31,4 +31,8 @@ import "./bundle.mjs";
 writeFileSync("apps/cli/dist/index.js", wrapper);
 chmodSync("apps/cli/dist/index.js", 0o755);
 
+mkdirSync("apps/cli/dist", { recursive: true });
+copyFileSync("apps/web/public/index.html", "apps/cli/dist/index.html");
+
 console.log("Bundle created at apps/cli/dist/bundle.mjs");
+console.log("Explorer UI copied to apps/cli/dist/index.html");

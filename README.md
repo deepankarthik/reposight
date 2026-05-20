@@ -10,6 +10,8 @@ RepoLens scans a repository, extracts its architecture (files, symbols, imports)
 
 **No code leaves your machine.** Everything runs locally.
 
+> **Experimental:** This project is under active development. Expect bugs, breaking changes, and incomplete features. Use at your own risk.
+
 ## Quick Start
 
 ```bash
@@ -22,8 +24,12 @@ repolens scan /path/to/repo
 # Output as JSON for the Interactive Explorer
 repolens scan /path/to/repo -f json
 
-# Open the web UI
-open apps/web/public/index.html  # or just drag it into your browser
+# Option 1: Start a local server (recommended)
+repolens serve /path/to/repo
+
+# Option 2: Copy the web UI next to your JSON
+repolens explorer /path/to/repo
+# Then open index.html in your browser
 ```
 
 Or use without installing:
@@ -95,9 +101,28 @@ Compare two git refs with symbol and import tracking.
 
 Generate a `.repolensrc.json` config file.
 
+### `explorer [dir]`
+
+Copy the web UI next to your `ARCHITECTURE.json` for local viewing.
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output <dir>` | Output directory (defaults to current directory) |
+| `--download` | Download the latest UI from GitHub instead of copying locally |
+
+### `serve [dir]`
+
+Start a local HTTP server to view the architecture graph.
+
+| Option | Description |
+|--------|-------------|
+| `-p, --port <port>` | Port to serve on (default: 3000) |
+
+Serves `index.html` and `ARCHITECTURE.json` from the target directory. Open `http://localhost:3000` in your browser.
+
 ## Interactive Explorer
 
-The web UI (`apps/web/public/index.html`) provides a visual way to explore any codebase:
+The web UI provides a visual way to explore any codebase:
 
 1. **Graph View** — Clickable import graph. Click nodes to see symbols, imports, and summaries.
 2. **Architecture View** — Auto-detected layers (Presentation, Business Logic, Data, etc.).
@@ -108,7 +133,18 @@ The web UI (`apps/web/public/index.html`) provides a visual way to explore any c
 7. **Dark/Light Mode** — Toggle between themes.
 8. **Export** — Download the graph as a PNG image.
 
-**No server required** — open `index.html` directly in your browser. It reads `ARCHITECTURE.json` from the same directory.
+**Viewing options:**
+
+```bash
+# Start a local server (recommended)
+repolens serve /path/to/repo   # http://localhost:3000
+
+# Or copy the HTML next to your JSON
+repolens explorer /path/to/repo
+# Open index.html in your browser
+```
+
+No server required for the HTML file — it reads `ARCHITECTURE.json` from the same directory.
 
 ## GitHub Action
 
@@ -179,7 +215,7 @@ repolens/
 │   ├── context-engine/   # Scanner, symbol extractor, import graph
 │   └── ai/               # AI provider (local + remote)
 ├── apps/
-│   ├── cli/              # CLI: scan, diff, init commands
+│   ├── cli/              # CLI: scan, diff, trace, init, explorer, serve
 │   ├── web/              # Interactive Explorer (static HTML)
 │   └── github-action/    # GitHub Action for auto-updating docs
 └── .github/workflows/    # CI pipeline + RepoLens action example

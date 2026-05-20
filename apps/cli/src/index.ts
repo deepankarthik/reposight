@@ -4,10 +4,11 @@ import { loadEnv } from "@repolens/shared";
 loadEnv(import.meta.url);
 
 import process from "node:process";
-import { writeFile, mkdir, rm, readFile as fsReadFile } from "node:fs/promises";
-import path, { join } from "node:path";
+import { writeFile, mkdir, rm, readFile as fsReadFile, copyFile, stat as fsStat } from "node:fs/promises";
+import path, { join, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { createServer } from "node:http";
 import { Command } from "commander";
 import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
 import { createAIProvider, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@repolens/ai";
@@ -17,6 +18,95 @@ const fs = { readFile: fsReadFile };
 
 const log = createLogger("repolens-cli");
 const execFileAsync = promisify(execFile);
+
+const HTML_FILE = "index.html";
+
+function getBundledHtmlPath(): string {
+  const cliDistDir = dirname(import.meta.url.replace("file://", "").replace("file:/", ""));
+  return join(cliDistDir, HTML_FILE);
+}
+
+async function findHtmlFile(): Promise<string> {
+  const bundledPath = getBundledHtmlPath();
+  try {
+    await fsStat(bundledPath);
+    return bundledPath;
+  } catch {
+    const localPath = join(dirname(dirname(dirname(import.meta.url.replace("file://", "").replace("file:/", "")))), "apps", "web", "public", HTML_FILE);
+    try {
+      await fsStat(localPath);
+      return localPath;
+    } catch {
+      throw new Error(`Could not find ${HTML_FILE}. Run 'repolens explorer --download' to download it, or copy apps/web/public/index.html from the repo.`);
+    }
+  }
+}
+
+async function runExplorer(outputDir: string, download: boolean): Promise<void> {
+  const targetDir = outputDir || ".";
+  const outputPath = join(targetDir, HTML_FILE);
+
+  if (download) {
+    const url = "https://raw.githubusercontent.com/deepankarthik/repolens/main/apps/web/public/index.html";
+    log.info("downloading explorer UI", { url });
+    const { fetch } = await import("node:https");
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+    }
+    const html = await response.text();
+    await writeFile(outputPath, html, "utf8");
+    log.info("downloaded explorer UI", { path: outputPath });
+    process.stdout.write(`Downloaded ${outputPath}\n`);
+    return;
+  }
+
+  const htmlSource = await findHtmlFile();
+  await mkdir(targetDir, { recursive: true });
+  await copyFile(htmlSource, outputPath);
+  log.info("copied explorer UI", { from: htmlSource, to: outputPath });
+  process.stdout.write(`Copied ${outputPath}\nOpen this file in your browser to view the architecture graph.\n`);
+}
+
+async function runServe(dir: string, port: number): Promise<void> {
+  const htmlSource = await findHtmlFile();
+  const targetDir = path.resolve(dir);
+  const jsonPath = join(targetDir, "ARCHITECTURE.json");
+
+  const server = createServer(async (req, res) => {
+    const url = new URL(req.url || "/", `http://localhost:${port}`);
+    
+    if (url.pathname === "/" || url.pathname === "/index.html") {
+      const html = await fsReadFile(htmlSource, "utf8");
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(html);
+    } else if (url.pathname === "/ARCHITECTURE.json" || url.pathname === "/architecture.json") {
+      try {
+        const json = await fsReadFile(jsonPath, "utf8");
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(json);
+      } catch {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Run 'repolens scan . -f json' first to generate ARCHITECTURE.json" }));
+      }
+    } else {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("Not found");
+    }
+  });
+
+  server.listen(port, () => {
+    process.stdout.write(`RepoLens Explorer running at http://localhost:${port}\n`);
+    process.stdout.write(`Serving: ${targetDir}\n`);
+    process.stdout.write("Press Ctrl+C to stop\n");
+  });
+
+  process.on("SIGINT", () => {
+    server.close();
+    process.stdout.write("\nServer stopped\n");
+    process.exit(0);
+  });
+}
 
 const FILE_SUMMARIZE_PROMPT = `Summarize this source file in 2-3 sentences. Focus on its purpose, key exports, and role in the codebase. Be specific and concise.`;
 
@@ -285,6 +375,33 @@ program
       await writeFile(configPath, JSON.stringify(defaultConfig, null, 2) + "\n", "utf8");
       log.info("created config file", { path: configPath });
       process.stdout.write(`Created ${configPath}\n`);
+    } catch (error) {
+      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("explorer [dir]")
+  .description("Copy the web UI next to your ARCHITECTURE.json for local viewing")
+  .option("-o, --output <dir>", "Output directory (defaults to current directory)")
+  .option("--download", "Download the latest UI from GitHub instead of copying locally")
+  .action(async (dir: string | undefined, options: { output?: string; download?: boolean }) => {
+    try {
+      await runExplorer(options.output ?? dir ?? ".", options.download ?? false);
+    } catch (error) {
+      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("serve [dir]")
+  .description("Start a local server to view the architecture graph")
+  .option("-p, --port <port>", "Port to serve on", "3000")
+  .action(async (dir: string | undefined, options: { port: string }) => {
+    try {
+      await runServe(dir ?? ".", parseInt(options.port, 10));
     } catch (error) {
       process.stderr.write(`repolens: ${errorMessage(error)}\n`);
       process.exitCode = 1;
