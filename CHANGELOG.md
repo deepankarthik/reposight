@@ -126,3 +126,9 @@
 ### Build
 
 - build: rebuild GitHub Action with renamed packages
+
+## v0.1.3 - 2026-05-20
+
+### Bug Fixes
+
+- fix(cli): change bin entry to bundle.mjs for npx compatibility
