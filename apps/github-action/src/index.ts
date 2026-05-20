@@ -140,16 +140,15 @@ function formatDiffComment(baseReport: JsonReport, headReport: JsonReport, baseR
 
 async function runScan(files?: string[], summarize?: boolean): Promise<JsonReport> {
   const outputDir = core.getInput("output-dir");
-  const tmpOutput = join(outputDir, ".reposight-tmp.json");
+  const jsonPath = join(outputDir, "ARCHITECTURE.json");
   const args = ["scan", ".", "-f", "json", "-o", outputDir];
   if (core.getInput("include-mermaid") !== "true") args.push("--no-mermaid");
   if (files?.length) args.push("--files", ...files);
   if (summarize) args.push("--summarize");
 
-  await exec.exec("npx", ["reposight", ...args], { silent: true });
+  await exec.exec("npx", ["reposight", ...args]);
 
-  const report = JSON.parse(readFileSync(tmpOutput, "utf8")) as JsonReport;
-  try { writeFileSync(tmpOutput, ""); } catch {}
+  const report = JSON.parse(readFileSync(jsonPath, "utf8")) as JsonReport;
   return report;
 }
 
@@ -328,7 +327,7 @@ async function run(): Promise<void> {
       if (existsSync(basePath)) {
         baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
       } else {
-        await exec.exec("npx", ["reposight", "scan", ".", "-f", "json", "-o", outputDir, "--no-mermaid"], { silent: true });
+        await exec.exec("npx", ["reposight", "scan", ".", "-f", "json", "-o", outputDir, "--no-mermaid"]);
         if (existsSync(basePath)) {
           baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
         }
