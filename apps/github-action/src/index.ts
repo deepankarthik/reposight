@@ -154,17 +154,7 @@ async function runScan(files?: string[], summarize?: boolean): Promise<JsonRepor
   core.info(`CLI exists: ${existsSync(cliPath)}`);
   core.info(`Running: node ${args.slice(1).join(" ")}`);
 
-  try {
-    await exec.exec("node", args, {
-      listeners: {
-        stdout: (data) => core.info(data.toString()),
-        stderr: (data) => core.error(data.toString())
-      }
-    });
-  } catch (err) {
-    core.error(`CLI failed: ${err instanceof Error ? err.message : String(err)}`);
-    throw err;
-  }
+  await exec.exec("node", args);
 
   if (!existsSync(jsonPath)) {
     throw new Error(`Expected output file not found: ${jsonPath}`);
