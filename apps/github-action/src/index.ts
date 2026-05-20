@@ -141,13 +141,14 @@ function formatDiffComment(baseReport: JsonReport, headReport: JsonReport, baseR
 async function runScan(files?: string[], summarize?: boolean): Promise<JsonReport> {
   const outputDir = core.getInput("output-dir");
   const jsonPath = join(outputDir, "ARCHITECTURE.json");
-  const args = ["reposight", "scan", ".", "-f", "json", "-o", outputDir];
+  const cliPath = join(__dirname, "reposight-cli.js");
+  const args = [cliPath, "scan", ".", "-f", "json", "-o", outputDir];
   if (core.getInput("include-mermaid") !== "true") args.push("--no-mermaid");
   if (files?.length) args.push("--files", ...files);
   if (summarize) args.push("--summarize");
 
-  core.info(`Running: npx ${args.join(" ")}`);
-  await exec.exec("npx", args);
+  core.info(`Running: node reposight-cli.js scan . -f json -o ${outputDir}`);
+  await exec.exec("node", args);
 
   if (!existsSync(jsonPath)) {
     throw new Error(`Expected output file not found: ${jsonPath}`);
@@ -332,7 +333,8 @@ async function run(): Promise<void> {
       if (existsSync(basePath)) {
         baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
       } else {
-        await exec.exec("npx", ["reposight", "scan", ".", "-f", "json", "-o", outputDir, "--no-mermaid"]);
+        const cliPath = join(__dirname, "reposight-cli.js");
+        await exec.exec("node", [cliPath, "scan", ".", "-f", "json", "-o", outputDir, "--no-mermaid"]);
         if (existsSync(basePath)) {
           baseReport = JSON.parse(readFileSync(basePath, "utf8")) as JsonReport;
         }
