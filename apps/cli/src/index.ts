@@ -8,7 +8,6 @@ import path, { join, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
 import { Command } from "commander";
 import { scanRepository, FileCache, generateArchitectureReport, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@reposight/context-engine";
 import { createAIProvider, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@reposight/ai";
@@ -22,7 +21,8 @@ const execFileAsync = promisify(execFile);
 const HTML_FILE = "index.html";
 
 function getBundledHtmlPath(): string {
-  return join(__dirname, HTML_FILE);
+  const cliDistDir = __dirname;
+  return join(cliDistDir, HTML_FILE);
 }
 
 async function findHtmlFile(): Promise<string> {
@@ -31,13 +31,33 @@ async function findHtmlFile(): Promise<string> {
     await fsStat(bundledPath);
     return bundledPath;
   } catch {
-    throw new Error(`Could not find ${HTML_FILE}. Copy apps/web/public/index.html from the repo to your output directory.`);
+    const localPath = join(dirname(dirname(dirname(__dirname))), "apps", "web", "public", HTML_FILE);
+    try {
+      await fsStat(localPath);
+      return localPath;
+    } catch {
+      throw new Error(`Could not find ${HTML_FILE}. Run 'repolens explorer --download' to download it, or copy apps/web/public/index.html from the repo.`);
+    }
   }
 }
 
-async function runExplorer(outputDir: string): Promise<void> {
+async function runExplorer(outputDir: string, download: boolean): Promise<void> {
   const targetDir = outputDir || ".";
   const outputPath = join(targetDir, HTML_FILE);
+
+  if (download) {
+    const url = "https://raw.githubusercontent.com/deepankarthik/reposight/main/apps/web/public/index.html";
+    log.info("downloading explorer UI", { url });
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+    }
+    const html = await response.text();
+    await writeFile(outputPath, html, "utf8");
+    log.info("downloaded explorer UI", { path: outputPath });
+    process.stdout.write(`Downloaded ${outputPath}\n`);
+    return;
+  }
 
   const htmlSource = await findHtmlFile();
   await mkdir(targetDir, { recursive: true });
@@ -53,7 +73,7 @@ async function runServe(dir: string, port: number): Promise<void> {
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url || "/", `http://localhost:${port}`);
-
+    
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const html = await fsReadFile(htmlSource, "utf8");
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
@@ -65,7 +85,7 @@ async function runServe(dir: string, port: number): Promise<void> {
         res.end(json);
       } catch {
         res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Run 'reposight scan . -f json' first to generate ARCHITECTURE.json" }));
+        res.end(JSON.stringify({ error: "Run 'repolens scan . -f json' first to generate ARCHITECTURE.json" }));
       }
     } else {
       res.writeHead(404, { "Content-Type": "text/plain" });
@@ -74,7 +94,7 @@ async function runServe(dir: string, port: number): Promise<void> {
   });
 
   server.listen(port, () => {
-    process.stdout.write(`RepoSight Explorer running at http://localhost:${port}\n`);
+    process.stdout.write(`RepoLens Explorer running at http://localhost:${port}\n`);
     process.stdout.write(`Serving: ${targetDir}\n`);
     process.stdout.write("Press Ctrl+C to stop\n");
   });
@@ -84,16 +104,6 @@ async function runServe(dir: string, port: number): Promise<void> {
     process.stdout.write("\nServer stopped\n");
     process.exit(0);
   });
-}
-
-function readVersion(): string {
-  try {
-    const pkgPath = join(__dirname, "package.json");
-    const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-    return pkg.version;
-  } catch {
-    return "0.0.0";
-  }
 }
 
 const FILE_SUMMARIZE_PROMPT = `Summarize this source file in 2-3 sentences. Focus on its purpose, key exports, and role in the codebase. Be specific and concise.`;
@@ -268,7 +278,7 @@ const program = new Command();
 program
   .name("reposight")
   .description("Generate living documentation from codebases")
-  .version(readVersion());
+  .version("0.1.0");
 
 program
   .command("scan [dir]")
@@ -364,9 +374,10 @@ program
   .command("explorer [dir]")
   .description("Copy the web UI next to your ARCHITECTURE.json for local viewing")
   .option("-o, --output <dir>", "Output directory (defaults to current directory)")
-  .action(async (dir: string | undefined, options: { output?: string }) => {
+  .option("--download", "Download the latest UI from GitHub instead of copying locally")
+  .action(async (dir: string | undefined, options: { output?: string; download?: boolean }) => {
     try {
-      await runExplorer(options.output ?? dir ?? ".");
+      await runExplorer(options.output ?? dir ?? ".", options.download ?? false);
     } catch (error) {
       process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;

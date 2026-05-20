@@ -10,6 +10,7 @@ export interface RepoLensConfig extends AIProviderConfig {
   logLevel: LogLevel;
   maxContextFiles: number;
   maxContextBytes: number;
+  maxTokenBudget: number;
   includeMermaid: boolean;
   maxFileBytes: number;
   maxChunkChars: number;
@@ -22,6 +23,7 @@ export interface RepoLensRcConfig {
   aiProviderModel?: string;
   maxContextFiles?: number;
   maxContextBytes?: number;
+  maxTokenBudget?: number;
   includeMermaid?: boolean;
   maxFileBytes?: number;
   maxChunkChars?: number;
@@ -57,6 +59,7 @@ export function readConfigFromEnv(env: NodeJS.ProcessEnv = process.env): RepoLen
     aiProviderModel: envValue(env, "AI_PROVIDER_MODEL", "gpt-4o-mini"),
     maxContextFiles: envNumber(env, "REPOLENS_MAX_CONTEXT_FILES", 80),
     maxContextBytes: envNumber(env, "REPOLENS_MAX_CONTEXT_BYTES", 120_000),
+    maxTokenBudget: envNumber(env, "REPOLENS_MAX_TOKEN_BUDGET", 100_000),
     includeMermaid: env.REPOLENS_INCLUDE_MERMAID !== "false",
     maxFileBytes: envNumber(env, "REPOLENS_MAX_FILE_BYTES", 80_000),
     maxChunkChars: envNumber(env, "REPOLENS_MAX_CHUNK_CHARS", 6_000)
@@ -121,6 +124,12 @@ export function validateConfig(config: unknown): RepoLensRcConfig {
     }
   }
 
+  if ("maxTokenBudget" in obj) {
+    if (typeof obj.maxTokenBudget === "number" && obj.maxTokenBudget > 0) {
+      validated.maxTokenBudget = obj.maxTokenBudget;
+    }
+  }
+
   if ("includeMermaid" in obj) {
     if (typeof obj.includeMermaid === "boolean") {
       validated.includeMermaid = obj.includeMermaid;
@@ -152,6 +161,7 @@ export function mergeConfig(fileConfig: RepoLensRcConfig | null, envConfig: Repo
     aiProviderModel: fileConfig.aiProviderModel ?? envConfig.aiProviderModel,
     maxContextFiles: fileConfig.maxContextFiles ?? envConfig.maxContextFiles,
     maxContextBytes: fileConfig.maxContextBytes ?? envConfig.maxContextBytes,
+    maxTokenBudget: fileConfig.maxTokenBudget ?? envConfig.maxTokenBudget,
     includeMermaid: fileConfig.includeMermaid ?? envConfig.includeMermaid,
     maxFileBytes: fileConfig.maxFileBytes ?? envConfig.maxFileBytes,
     maxChunkChars: fileConfig.maxChunkChars ?? envConfig.maxChunkChars
