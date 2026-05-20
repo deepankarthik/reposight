@@ -108,3 +108,21 @@
 - chore: add release script and CHANGELOG
 - chore: remove internal ROADMAP.md from public repo
 
+## v0.1.2 - 2026-05-20
+
+### Bug Fixes
+
+- fix(action): update to Node.js 24 to avoid deprecation warning
+- fix(build): resolve paths relative to script location
+
+### Refactoring
+
+- refactor: rename repolens to reposight across entire codebase
+
+### Documentation
+
+- docs: update README with RepoSight branding
+
+### Build
+
+- build: rebuild GitHub Action with renamed packages
