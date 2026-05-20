@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./dist/bundle.mjs",
   "bin": {
-    "reposight": "./dist/index.js"
+    "reposight": "./dist/bundle.mjs"
   },
   "files": [
     "dist/"

@@ -33,6 +33,7 @@ import "./bundle.mjs";
 `;
 
 mkdirSync(join(__dirname, "apps/cli/dist"), { recursive: true });
+chmodSync(join(__dirname, "apps/cli/dist/bundle.mjs"), 0o755);
 writeFileSync(join(__dirname, "apps/cli/dist/index.js"), wrapper);
 chmodSync(join(__dirname, "apps/cli/dist/index.js"), 0o755);
 copyFileSync(join(__dirname, "apps/web/public/index.html"), join(__dirname, "apps/cli/dist/index.html"));
