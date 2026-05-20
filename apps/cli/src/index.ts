@@ -49,7 +49,6 @@ async function runExplorer(outputDir: string, download: boolean): Promise<void> 
   if (download) {
     const url = "https://raw.githubusercontent.com/deepankarthik/repolens/main/apps/web/public/index.html";
     log.info("downloading explorer UI", { url });
-    const { fetch } = await import("node:https");
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
