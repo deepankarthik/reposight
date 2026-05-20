@@ -16,11 +16,12 @@ const nodeBuiltins = [
 await build({
   entryPoints: [join(__dirname, "apps/cli/src/index.ts")],
   bundle: true,
-  outfile: join(__dirname, "apps/cli/dist/index.js"),
+  outfile: join(__dirname, "apps/cli/dist/index.cjs"),
+  banner: { js: "#!/usr/bin/env node" },
   platform: "node",
   target: "node18",
-  format: "esm",
-  external: [...nodeBuiltins],
+  format: "cjs",
+  external: nodeBuiltins,
   sourcemap: false,
   minify: false,
   define: {
@@ -29,8 +30,8 @@ await build({
 });
 
 mkdirSync(join(__dirname, "apps/cli/dist"), { recursive: true });
-chmodSync(join(__dirname, "apps/cli/dist/index.js"), 0o755);
+chmodSync(join(__dirname, "apps/cli/dist/index.cjs"), 0o755);
 copyFileSync(join(__dirname, "apps/web/public/index.html"), join(__dirname, "apps/cli/dist/index.html"));
 
-console.log("Bundle created at apps/cli/dist/index.js");
+console.log("Bundle created at apps/cli/dist/index.cjs");
 console.log("Explorer UI copied to apps/cli/dist/index.html");

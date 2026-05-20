@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts -o dist --minify --no-cache && cp ../../apps/cli/dist/index.js dist/reposight-cli.mjs",
+    "build": "ncc build src/index.ts -o dist --minify --no-cache && cp ../../apps/cli/dist/index.cjs dist/reposight-cli.cjs",
     "dev": "tsx src/index.ts"
   },
   "dependencies": {

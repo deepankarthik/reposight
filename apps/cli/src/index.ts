@@ -1,7 +1,6 @@
-#!/usr/bin/env node
 import { loadEnv } from "@reposight/shared";
 
-loadEnv(import.meta.url);
+loadEnv(__filename);
 
 import process from "node:process";
 import { writeFile, mkdir, rm, readFile as fsReadFile, copyFile, stat as fsStat } from "node:fs/promises";
@@ -22,7 +21,7 @@ const execFileAsync = promisify(execFile);
 const HTML_FILE = "index.html";
 
 function getBundledHtmlPath(): string {
-  const cliDistDir = dirname(import.meta.url.replace("file://", "").replace("file:/", ""));
+  const cliDistDir = __dirname;
   return join(cliDistDir, HTML_FILE);
 }
 
@@ -32,7 +31,7 @@ async function findHtmlFile(): Promise<string> {
     await fsStat(bundledPath);
     return bundledPath;
   } catch {
-    const localPath = join(dirname(dirname(dirname(import.meta.url.replace("file://", "").replace("file:/", "")))), "apps", "web", "public", HTML_FILE);
+    const localPath = join(dirname(dirname(dirname(__dirname))), "apps", "web", "public", HTML_FILE);
     try {
       await fsStat(localPath);
       return localPath;
@@ -400,4 +399,6 @@ program
 
 program.action(() => program.help());
 
-await program.parseAsync();
+(async () => {
+  await program.parseAsync();
+})();

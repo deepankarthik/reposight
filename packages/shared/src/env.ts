@@ -22,7 +22,12 @@ function parseEnvFile(filePath: string): void {
 }
 
 export function loadEnv(metaUrl: string): void {
-  let dir = dirname(fileURLToPath(metaUrl));
+  let dir: string;
+  if (metaUrl.startsWith("file://")) {
+    dir = dirname(fileURLToPath(metaUrl));
+  } else {
+    dir = dirname(metaUrl);
+  }
   for (let i = 0; i < 5; i++) {
     const envFile = resolve(dir, ".env");
     if (existsSync(envFile)) {
