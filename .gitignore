@@ -4,3 +4,6 @@ dist/
 .vite/
 .env
 .env.local
+ARCHITECTURE.json
+ARCHITECTURE.md
+DEPENDENCIES.mmd
