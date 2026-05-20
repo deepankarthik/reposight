@@ -1,4 +1,4 @@
-name: 'RepoLens'
+name: 'RepoSight'
 description: 'Auto-generate and update architecture documentation for your codebase'
 author: 'deepankarthik'
 
@@ -33,5 +33,5 @@ branding:
   color: 'blue'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
