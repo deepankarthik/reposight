@@ -2,8 +2,8 @@
 
 > Understand any codebase in minutes, not days.
 
-[![npm version](https://img.shields.io/npm/v/repolens.svg)](https://www.npmjs.com/package/repolens)
-[![CI](https://github.com/deepankarthik/repolens/actions/workflows/ci.yml/badge.svg)](https://github.com/deepankarthik/repolens/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/reposight.svg)](https://www.npmjs.com/package/repolens)
+[![CI](https://github.com/deepankarthik/reposight/actions/workflows/ci.yml/badge.svg)](https://github.com/deepankarthik/reposight/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 RepoLens scans a repository, extracts its architecture (files, symbols, imports), and generates living documentation. Built for developers who need to understand unfamiliar code quickly — onboarding to a new team, reviewing pull requests, or navigating legacy codebases.
@@ -16,26 +16,26 @@ RepoLens scans a repository, extracts its architecture (files, symbols, imports)
 
 ```bash
 # Install globally
-npm install -g repolens
+npm install -g reposight
 
 # Scan any repository
-repolens scan /path/to/repo
+reposight scan /path/to/repo
 
 # Output as JSON for the Interactive Explorer
-repolens scan /path/to/repo -f json
+reposight scan /path/to/repo -f json
 
 # Option 1: Start a local server (recommended)
-repolens serve /path/to/repo
+reposight serve /path/to/repo
 
 # Option 2: Copy the web UI next to your JSON
-repolens explorer /path/to/repo
+reposight explorer /path/to/repo
 # Then open index.html in your browser
 ```
 
 Or use without installing:
 
 ```bash
-npx repolens scan .
+npx reposight scan .
 ```
 
 ## Why RepoLens?
@@ -43,7 +43,7 @@ npx repolens scan .
 | | RepoLens | CodeSee | Sourcegraph |
 |---|---|---|---|
 | **Cost** | Free, open-source | $49+/user/month | $49+/user/month |
-| **Setup** | `npx repolens scan .` | SaaS signup, GitHub app | Self-host or cloud |
+| **Setup** | `npx reposight scan .` | SaaS signup, GitHub app | Self-host or cloud |
 | **Data** | Stays in your repo | Stored on their servers | Stored on their servers |
 | **AI** | Optional, delta-only | Required | Required |
 | **Offline** | Full support | No | No |
@@ -99,7 +99,7 @@ Compare two git refs with symbol and import tracking.
 
 ### `init [dir]`
 
-Generate a `.repolensrc.json` config file.
+Generate a `.reposightrc.json` config file.
 
 ### `explorer [dir]`
 
@@ -137,10 +137,10 @@ The web UI provides a visual way to explore any codebase:
 
 ```bash
 # Start a local server (recommended)
-repolens serve /path/to/repo   # http://localhost:3000
+reposight serve /path/to/repo   # http://localhost:3000
 
 # Or copy the HTML next to your JSON
-repolens explorer /path/to/repo
+reposight explorer /path/to/repo
 # Open index.html in your browser
 ```
 
@@ -150,7 +150,7 @@ No server required for the HTML file — it reads `ARCHITECTURE.json` from the s
 
 Automatically generate and update architecture documentation on every push and pull request.
 
-Add `.github/workflows/repolens.yml` to your repo:
+Add `.github/workflows/reposight.yml` to your repo:
 
 ```yaml
 jobs:
@@ -160,7 +160,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: deepankarthik/repolens/apps/github-action@master
+      - uses: deepankarthik/reposight/apps/github-action@master
         with:
           commit: true      # Auto-commit ARCHITECTURE.json
           comment: true     # Post PR comment with changes
@@ -175,7 +175,7 @@ jobs:
 
 ## Configuration
 
-Create a `.repolensrc.json` in your repo root:
+Create a `.reposightrc.json` in your repo root:
 
 ```json
 {

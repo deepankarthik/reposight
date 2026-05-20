@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { loadEnv } from "@repolens/shared";
+import { loadEnv } from "@reposight/shared";
 
 loadEnv(import.meta.url);
 
@@ -10,13 +10,13 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createServer } from "node:http";
 import { Command } from "commander";
-import { scanRepository, FileCache, generateArchitectureReport, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
-import { createAIProvider, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@repolens/ai";
-import { errorMessage, readConfigFromEnv, createLogger, loadConfigFile, mergeConfig } from "@repolens/shared";
+import { scanRepository, FileCache, generateArchitectureReport, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@reposight/context-engine";
+import { createAIProvider, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@reposight/ai";
+import { errorMessage, readConfigFromEnv, createLogger, loadConfigFile, mergeConfig } from "@reposight/shared";
 
 const fs = { readFile: fsReadFile };
 
-const log = createLogger("repolens-cli");
+const log = createLogger("reposight-cli");
 const execFileAsync = promisify(execFile);
 
 const HTML_FILE = "index.html";
@@ -47,7 +47,7 @@ async function runExplorer(outputDir: string, download: boolean): Promise<void> 
   const outputPath = join(targetDir, HTML_FILE);
 
   if (download) {
-    const url = "https://raw.githubusercontent.com/deepankarthik/repolens/main/apps/web/public/index.html";
+    const url = "https://raw.githubusercontent.com/deepankarthik/reposight/main/apps/web/public/index.html";
     log.info("downloading explorer UI", { url });
     const response = await fetch(url);
     if (!response.ok) {
@@ -226,8 +226,8 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
 
   log.info("running diff analysis", { dir, base, head });
 
-  const baseDir = join(dir, ".repolens-diff-base");
-  const headDir = join(dir, ".repolens-diff-head");
+  const baseDir = join(dir, ".reposight-diff-base");
+  const headDir = join(dir, ".reposight-diff-head");
 
   try {
     await mkdir(baseDir, { recursive: true });
@@ -277,7 +277,7 @@ async function runDiff(dir: string, base: string, head: string, outputDir: strin
 
 const program = new Command();
 program
-  .name("repolens")
+  .name("reposight")
   .description("Generate living documentation from codebases")
   .version("0.1.0");
 
@@ -298,7 +298,7 @@ program
     try {
       await runScan(dir ?? ".", options.output ?? "", { noMermaid: !options.mermaid, fileLevel: options.fileLevel, ignoreTests: options.ignoreTests, targetFile: options.targetFile, format: options.format, include: options.include, exclude: options.exclude, files: options.files, summarize: options.summarize });
     } catch (error) {
-      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;
     }
   });
@@ -308,14 +308,14 @@ program
   .description("Trace code flow through a repository")
   .action(async (dir: string | undefined, query: string | undefined) => {
     if (!query) {
-      process.stderr.write("repolens: missing required argument 'query'\n");
+      process.stderr.write("reposight: missing required argument 'query'\n");
       process.exitCode = 1;
       return;
     }
     try {
       await runTrace(dir ?? ".", query);
     } catch (error) {
-      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;
     }
   });
@@ -330,22 +330,22 @@ program
     try {
       await runDiff(dir ?? ".", options.base, options.head, options.output ?? "");
     } catch (error) {
-      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;
     }
   });
 
 program
   .command("init [dir]")
-  .description("Generate a .repolensrc.json configuration file")
+  .description("Generate a .reposightrc.json configuration file")
   .action(async (dir: string | undefined) => {
     try {
       const targetDir = dir ?? ".";
-      const configPath = join(targetDir, ".repolensrc.json");
+      const configPath = join(targetDir, ".reposightrc.json");
 
       try {
         await fs.readFile(configPath, "utf8");
-        process.stderr.write(`repolens: ${configPath} already exists\n`);
+        process.stderr.write(`reposight: ${configPath} already exists\n`);
         process.exitCode = 1;
         return;
       } catch {
@@ -366,7 +366,7 @@ program
       log.info("created config file", { path: configPath });
       process.stdout.write(`Created ${configPath}\n`);
     } catch (error) {
-      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;
     }
   });
@@ -380,7 +380,7 @@ program
     try {
       await runExplorer(options.output ?? dir ?? ".", options.download ?? false);
     } catch (error) {
-      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;
     }
   });
@@ -393,7 +393,7 @@ program
     try {
       await runServe(dir ?? ".", parseInt(options.port, 10));
     } catch (error) {
-      process.stderr.write(`repolens: ${errorMessage(error)}\n`);
+      process.stderr.write(`reposight: ${errorMessage(error)}\n`);
       process.exitCode = 1;
     }
   });

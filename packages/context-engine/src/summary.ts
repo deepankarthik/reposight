@@ -1,4 +1,4 @@
-import type { CodeSymbol } from "@repolens/shared";
+import type { CodeSymbol } from "@reposight/shared";
 
 export function generateHeuristicSummary(
   filePath: string,

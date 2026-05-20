@@ -71,7 +71,7 @@ interface IgnorePattern {
 }
 
 let gitignorePatterns: IgnorePattern[] = [];
-let repolensignorePatterns: IgnorePattern[] = [];
+let reposightignorePatterns: IgnorePattern[] = [];
 
 function gitignoreToRegex(pattern: string): RegExp {
   const hasSlash = pattern.includes("/");
@@ -126,7 +126,7 @@ function matchesPatterns(patterns: IgnorePattern[], normalizedPath: string): boo
 
 export function loadIgnoreFiles(rootDir: string): void {
   gitignorePatterns = [];
-  repolensignorePatterns = [];
+  reposightignorePatterns = [];
 
   const gitignorePath = path.join(rootDir, ".gitignore");
   if (fs.existsSync(gitignorePath)) {
@@ -138,13 +138,13 @@ export function loadIgnoreFiles(rootDir: string): void {
     }
   }
 
-  const repolensignorePath = path.join(rootDir, ".repolensignore");
-  if (fs.existsSync(repolensignorePath)) {
+  const reposightignorePath = path.join(rootDir, ".reposightignore");
+  if (fs.existsSync(reposightignorePath)) {
     try {
-      const content = fs.readFileSync(repolensignorePath, "utf8");
-      repolensignorePatterns = parseIgnoreFile(content);
+      const content = fs.readFileSync(reposightignorePath, "utf8");
+      reposightignorePatterns = parseIgnoreFile(content);
     } catch {
-      repolensignorePatterns = [];
+      reposightignorePatterns = [];
     }
   }
 }
@@ -159,7 +159,7 @@ export function shouldIgnorePath(relativePath: string, options?: { ignoreTests?:
   if (options?.ignoreTests && testFilePatterns.some((pattern) => pattern.test(normalized))) return true;
 
   if (matchesPatterns(gitignorePatterns, normalized)) return true;
-  if (matchesPatterns(repolensignorePatterns, normalized)) return true;
+  if (matchesPatterns(reposightignorePatterns, normalized)) return true;
 
   return false;
 }

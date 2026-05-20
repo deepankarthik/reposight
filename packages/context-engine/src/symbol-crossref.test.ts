@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildSymbolCrossReference, getTopReferencedSymbols, getSymbolDependencies } from "./symbol-crossref.js";
-import type { CodeSymbol } from "@repolens/shared";
+import type { CodeSymbol } from "@reposight/shared";
 
 describe("buildSymbolCrossReference", () => {
   it("creates entries for all symbols", () => {

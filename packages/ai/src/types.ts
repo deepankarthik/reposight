@@ -1,4 +1,4 @@
-import type { ChatMessage } from "@repolens/shared";
+import type { ChatMessage } from "@reposight/shared";
 
 export interface AIStreamRequest {
   messages: ChatMessage[];

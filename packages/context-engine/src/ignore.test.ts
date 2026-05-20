@@ -142,7 +142,7 @@ describe("loadIgnoreFiles", () => {
   let originalCwd: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "repolens-ignore-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "reposight-ignore-"));
     originalCwd = process.cwd();
   });
 
@@ -158,8 +158,8 @@ describe("loadIgnoreFiles", () => {
     expect(shouldIgnorePath("temp/file.txt")).toBe(true);
   });
 
-  it("should load .repolensignore patterns", () => {
-    fs.writeFileSync(path.join(tmpDir, ".repolensignore"), "*.generated.ts\nmocks/\n");
+  it("should load .reposightignore patterns", () => {
+    fs.writeFileSync(path.join(tmpDir, ".reposightignore"), "*.generated.ts\nmocks/\n");
     loadIgnoreFiles(tmpDir);
     expect(shouldIgnorePath("src/types.generated.ts")).toBe(true);
     expect(shouldIgnorePath("mocks/data.ts")).toBe(true);

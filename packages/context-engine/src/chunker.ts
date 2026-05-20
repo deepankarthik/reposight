@@ -1,4 +1,4 @@
-import type { ContextChunk, ContextFile } from "@repolens/shared";
+import type { ContextChunk, ContextFile } from "@reposight/shared";
 
 export function chunkFile(file: ContextFile, maxChunkChars = 6_000): ContextChunk[] {
   if (file.content.length <= maxChunkChars) {

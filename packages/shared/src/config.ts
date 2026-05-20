@@ -70,7 +70,7 @@ export async function loadConfigFile(rootDir: string): Promise<RepoLensRcConfig 
   const fs = await import("node:fs/promises");
   const path = await import("node:path");
 
-  const configPath = path.join(rootDir, ".repolensrc.json");
+  const configPath = path.join(rootDir, ".reposightrc.json");
   try {
     const content = await fs.readFile(configPath, "utf8");
     const parsed = JSON.parse(content);

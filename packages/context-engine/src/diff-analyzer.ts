@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { RepositoryContext } from "@repolens/shared";
+import type { RepositoryContext } from "@reposight/shared";
 import { extractSymbols, extractImportsFromSource } from "./symbol-extractor.js";
 import { languageFromPath } from "./language.js";
 

@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { RepositoryContext, ContextFile } from "@repolens/shared";
+import type { RepositoryContext, ContextFile } from "@reposight/shared";
 import type { ImportGraph } from "./import-graph.js";
 
 interface ArchitectureSection {

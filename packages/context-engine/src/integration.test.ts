@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { scanRepository, FileCache, generateArchitectureReport, generateJsonReport } from "@repolens/context-engine";
+import { scanRepository, FileCache, generateArchitectureReport, generateJsonReport } from "@reposight/context-engine";
 
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "repolens-integration-"));
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "reposight-integration-"));
 });
 
 afterEach(async () => {

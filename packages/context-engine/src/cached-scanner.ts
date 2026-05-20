@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { ContextFile, RepositoryContext } from "@repolens/shared";
+import type { ContextFile, RepositoryContext } from "@reposight/shared";
 import { chunkFile } from "./chunker.js";
 import { shouldIgnorePath, loadIgnoreFiles, isGeneratedFile, setIncludeExcludePatterns, shouldIncludePath } from "./ignore.js";
 import { isLikelyTextFile, languageFromPath } from "./language.js";

@@ -296,7 +296,7 @@
     let importedByMap = {};
 
     function initTheme() {
-      const saved = localStorage.getItem('repolens-theme');
+      const saved = localStorage.getItem('reposight-theme');
       if (saved === 'light') {
         document.documentElement.classList.add('light');
         document.getElementById('themeToggle').textContent = 'Dark';
@@ -306,7 +306,7 @@
     function toggleTheme() {
       const isLight = document.documentElement.classList.toggle('light');
       document.getElementById('themeToggle').textContent = isLight ? 'Dark' : 'Light';
-      localStorage.setItem('repolens-theme', isLight ? 'light' : 'dark');
+      localStorage.setItem('reposight-theme', isLight ? 'light' : 'dark');
       if (network) {
         const color = isLight ? '#333' : '#ddd';
         nodesDataSet.update(allNodesData.map(n => ({ id: n.id, font: { color, size: 11 } })));
@@ -802,7 +802,7 @@
       const canvas = document.querySelector('#graph canvas');
       if (!canvas) return;
       const link = document.createElement('a');
-      link.download = 'repolens-graph.png';
+      link.download = 'reposight-graph.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
@@ -891,7 +891,7 @@
               </div>
               <div class="input-full">
                 <label>Path to ARCHITECTURE.json</label>
-                <input type="text" id="diffJsonPath" placeholder=".repolens/ARCHITECTURE.json" value=".repolens/ARCHITECTURE.json">
+                <input type="text" id="diffJsonPath" placeholder=".reposight/ARCHITECTURE.json" value=".reposight/ARCHITECTURE.json">
               </div>
               <button onclick="loadDiffFromGitHub()">Compare</button>
             </div>
@@ -1012,7 +1012,7 @@
       if (embedded.files.length > 0) {
         const firstFile = embedded.files[0].path;
         const parts = firstFile.split('/');
-        if (parts[0] === 'apps' || parts[0] === 'packages') return 'deepankarthik/repolens';
+        if (parts[0] === 'apps' || parts[0] === 'packages') return 'deepankarthik/reposight';
       }
       return '';
     }

@@ -1,4 +1,4 @@
-import { RepoLensError, safeJsonParse } from "@repolens/shared";
+import { RepoLensError, safeJsonParse } from "@reposight/shared";
 import type { AIProvider, AIStreamRequest } from "./types.js";
 
 interface RemoteProviderOptions {

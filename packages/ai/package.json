@@ -1,5 +1,5 @@
 {
-  "name": "@repolens/ai",
+  "name": "@reposight/ai",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,6 +17,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@repolens/shared": "workspace:*"
+    "@reposight/shared": "workspace:*"
   }
 }

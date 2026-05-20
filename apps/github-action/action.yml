@@ -12,9 +12,9 @@ inputs:
     required: false
     default: 'true'
   config:
-    description: 'Path to .repolensrc.json config file'
+    description: 'Path to .reposightrc.json config file'
     required: false
-    default: '.repolensrc.json'
+    default: '.reposightrc.json'
   output-dir:
     description: 'Directory to write output files'
     required: false

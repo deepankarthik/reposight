@@ -1,4 +1,4 @@
-import type { ChatMessage } from "@repolens/shared";
+import type { ChatMessage } from "@reposight/shared";
 import type { AIProvider } from "./types.js";
 
 const SUMMARY_PROMPT = "Summarize the following conversation history concisely. Focus on key decisions, context, and user requests. Keep it under 200 words.";

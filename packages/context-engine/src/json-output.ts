@@ -1,4 +1,4 @@
-import type { RepositoryContext, ContextFile, CodeSymbol, PackageInfo } from "@repolens/shared";
+import type { RepositoryContext, ContextFile, CodeSymbol, PackageInfo } from "@reposight/shared";
 import type { ImportGraph } from "./import-graph.js";
 
 interface JsonFileEntry {

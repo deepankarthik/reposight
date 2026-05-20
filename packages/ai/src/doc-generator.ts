@@ -1,4 +1,4 @@
-import type { ChatMessage, RepositoryContext } from "@repolens/shared";
+import type { ChatMessage, RepositoryContext } from "@reposight/shared";
 import type { AIProvider } from "./types.js";
 
 const ARCHITECTURE_SUMMARY_PROMPT = `You are a senior software architect analyzing a codebase. Generate a concise architecture summary based on the repository context provided.

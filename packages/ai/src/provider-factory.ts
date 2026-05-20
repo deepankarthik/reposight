@@ -1,4 +1,4 @@
-import type { AIProviderConfig } from "@repolens/shared";
+import type { AIProviderConfig } from "@reposight/shared";
 import { LocalAIProvider } from "./local-provider.js";
 import { RemoteAIProvider } from "./remote-provider.js";
 import type { AIProvider } from "./types.js";

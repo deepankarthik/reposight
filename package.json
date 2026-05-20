@@ -1,5 +1,5 @@
 {
-  "name": "repolens",
+  "name": "reposight",
   "version": "0.1.0",
   "private": true,
   "description": "Generate living documentation from codebases — architecture maps, dependency graphs, and data flow traces.",
@@ -9,7 +9,7 @@
     "build": "tsc -b",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "dev:cli": "pnpm --filter repolens dev",
+    "dev:cli": "pnpm --filter reposight dev",
     "clean": "pnpm -r exec rm -rf dist"
   },
   "devDependencies": {

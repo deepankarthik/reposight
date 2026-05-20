@@ -1,5 +1,5 @@
 import ts from "typescript";
-import type { CodeSymbol } from "@repolens/shared";
+import type { CodeSymbol } from "@reposight/shared";
 
 const MAX_SYMBOLS = 60;
 

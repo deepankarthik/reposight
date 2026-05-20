@@ -1,11 +1,11 @@
 {
-  "name": "repolens",
+  "name": "reposight",
   "version": "0.1.1",
   "description": "Understand any codebase in minutes. Scans repositories, extracts architecture, and generates living documentation.",
   "type": "module",
   "main": "./dist/bundle.mjs",
   "bin": {
-    "repolens": "./dist/index.js"
+    "reposight": "./dist/index.js"
   },
   "files": [
     "dist/"
@@ -15,11 +15,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deepankarthik/repolens.git"
+    "url": "git+https://github.com/deepankarthik/reposight.git"
   },
-  "homepage": "https://github.com/deepankarthik/repolens",
+  "homepage": "https://github.com/deepankarthik/reposight",
   "bugs": {
-    "url": "https://github.com/deepankarthik/repolens/issues"
+    "url": "https://github.com/deepankarthik/reposight/issues"
   },
   "license": "MIT",
   "keywords": [
@@ -40,9 +40,9 @@
     "postpublish": "node ../../postpublish.mjs"
   },
   "dependencies": {
-    "@repolens/shared": "workspace:*",
-    "@repolens/context-engine": "workspace:*",
-    "@repolens/ai": "workspace:*",
+    "@reposight/shared": "workspace:*",
+    "@reposight/context-engine": "workspace:*",
+    "@reposight/ai": "workspace:*",
     "commander": "^12.1.0",
     "typescript": "^5.7.2"
   },

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateJsonReport } from "./json-output.js";
-import type { RepositoryContext, ContextFile } from "@repolens/shared";
+import type { RepositoryContext, ContextFile } from "@reposight/shared";
 
 function makeContext(overrides: Partial<RepositoryContext> = {}): RepositoryContext {
   return {

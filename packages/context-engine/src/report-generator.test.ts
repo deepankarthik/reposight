@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateArchitectureReport, generateMermaidDiagram } from "./report-generator.js";
-import type { RepositoryContext } from "@repolens/shared";
+import type { RepositoryContext } from "@reposight/shared";
 
 function makeContext(overrides?: Partial<RepositoryContext>): RepositoryContext {
   return {

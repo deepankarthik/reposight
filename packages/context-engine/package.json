@@ -1,5 +1,5 @@
 {
-  "name": "@repolens/context-engine",
+  "name": "@reposight/context-engine",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@repolens/shared": "workspace:*",
+    "@reposight/shared": "workspace:*",
     "typescript": "^5.7.2"
   }
 }
