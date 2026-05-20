@@ -52,3 +52,59 @@
 ### Chores
 
 - chore: remove internal ROADMAP.md from public repo
+
+## v0.1.1 - 2026-05-20
+
+### Features
+
+- feat(cli): make JSON the default output format
+- feat(cli): add explorer and serve commands for web UI
+- feat: improve Diff view UI/UX and fix pnpm dev:cli filter
+- feat: web UI refactor with dark/light mode, diff view, improved search
+- feat: surgical updates to ARCHITECTURE.json with --files CLI option
+- feat: add GitHub Action for auto-generating architecture docs
+- feat: extract code comments for better heuristic summaries
+- feat: prepare CLI for npm publishing
+- feat: wire up --summarize flag for AI-powered file summaries
+- feat: enhance web UI with search, cross-references, source viewer, and responsive design
+- feat: add heuristic summaries and architecture diagram to web UI
+- feat: add interactive web explorer prototype
+- feat: add JSON output, glob filtering, progress reporting, init command, symbol cross-ref, and config validation
+- feat: add Go/Rust/Java support, smart filtering, and parallel processing
+- feat: default dir to current directory for scan and diff commands
+- feat: fix all known issues - Python extractor, diff CLI, import graph wiring, file-level Mermaid, tests, config limits
+
+### Bug Fixes
+
+- fix(cli): use global fetch instead of importing from node:https
+- fix: proper delta detection for AI summarization
+- fix: delta-only AI summarization in GitHub Action
+- fix: restore workspace deps for dev, add prepublish/postpublish scripts for npm
+- fix: commit pnpm-lock.yaml for CI reproducibility
+- fix(ci): update actions to v6 for Node.js 24 support
+- fix: remove explicit pnpm version from CI to avoid packageManager conflict
+- fix: escape all user-controlled content in web UI to prevent XSS
+- fix: prevent budget overflow in parallel worker queue
+- fix: address code review issues - race condition, cache counting, gitignore parsing, regex fixes
+- fix: handle missing arguments gracefully for all commands
+- fix: show help instead of error when no command provided
+- fix: diff command output dir creation and remove dead execFile call
+
+### Refactoring
+
+- refactor(cli): remove standalone .mmd file generation
+- refactor: remove AI_SUMMARY.md and --no-ai flag, keep only --summarize for per-file AI summaries
+- refactor: remove dead code, fix shell injection, simplify CLI
+
+### Documentation
+
+- docs: add explicit AI usage section and remove CONTRIBUTING.md reference
+- docs: update README with current features and web UI documentation
+- docs: add roadmap, reposition product as codebase navigator + living docs
+- docs: add comprehensive README
+
+### Chores
+
+- chore: add release script and CHANGELOG
+- chore: remove internal ROADMAP.md from public repo
+

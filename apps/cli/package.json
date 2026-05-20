@@ -1,6 +1,6 @@
 {
   "name": "repolens",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Understand any codebase in minutes. Scans repositories, extracts architecture, and generates living documentation.",
   "type": "module",
   "main": "./dist/bundle.mjs",
