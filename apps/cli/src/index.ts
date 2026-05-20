@@ -10,7 +10,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createServer } from "node:http";
 import { Command } from "commander";
-import { scanRepository, FileCache, generateArchitectureReport, generateMermaidDiagram, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
+import { scanRepository, FileCache, generateArchitectureReport, analyzeDiff, formatDiffReport, generateJsonReport, formatProgress } from "@repolens/context-engine";
 import { createAIProvider, generateTraceExplanation, generateDiffAnalysis, createSummarizeFn } from "@repolens/ai";
 import { errorMessage, readConfigFromEnv, createLogger, loadConfigFile, mergeConfig } from "@repolens/shared";
 
@@ -188,13 +188,6 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     const mdPath = outputDir ? join(outputDir, "ARCHITECTURE.md") : join(dir, "ARCHITECTURE.md");
     await writeFile(mdPath, report, "utf8");
     log.info("wrote architecture report", { path: mdPath });
-  }
-
-  if (includeMermaid) {
-    const diagram = generateMermaidDiagram(context, fileLevelGraph);
-    const diagramPath = outputDir ? join(outputDir, "DEPENDENCIES.mmd") : join(dir, "DEPENDENCIES.mmd");
-    await writeFile(diagramPath, diagram, "utf8");
-    log.info("wrote dependency diagram", { path: diagramPath });
   }
 }
 
