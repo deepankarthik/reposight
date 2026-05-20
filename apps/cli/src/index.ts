@@ -176,27 +176,25 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     await mkdir(outputDir, { recursive: true });
   }
 
-  const isJson = options.format === "json";
-  const reportExt = isJson ? "json" : "md";
-  const reportName = isJson ? "ARCHITECTURE.json" : "ARCHITECTURE.md";
-  const outputPath = outputDir ? join(outputDir, reportName) : join(dir, reportName);
+  const isMarkdown = options.format === "markdown";
+  const jsonPath = outputDir ? join(outputDir, "ARCHITECTURE.json") : join(dir, "ARCHITECTURE.json");
+  const jsonReport = generateJsonReport(context, false);
+  await writeFile(jsonPath, JSON.stringify(jsonReport, null, 2), "utf8");
+  log.info("wrote json report", { path: jsonPath });
 
-  if (isJson) {
-    const jsonReport = generateJsonReport(context, false);
-    await writeFile(outputPath, JSON.stringify(jsonReport, null, 2), "utf8");
-    log.info("wrote json report", { path: outputPath });
-  } else {
+  if (isMarkdown) {
     const importGraph = context.importGraph;
     const report = generateArchitectureReport(context, { includeMermaid, fileLevelGraph, importGraph });
-    await writeFile(outputPath, report, "utf8");
-    log.info("wrote architecture report", { path: outputPath });
+    const mdPath = outputDir ? join(outputDir, "ARCHITECTURE.md") : join(dir, "ARCHITECTURE.md");
+    await writeFile(mdPath, report, "utf8");
+    log.info("wrote architecture report", { path: mdPath });
+  }
 
-    if (includeMermaid) {
-      const diagram = generateMermaidDiagram(context, fileLevelGraph);
-      const diagramPath = outputDir ? join(outputDir, "DEPENDENCIES.mmd") : join(dir, "DEPENDENCIES.mmd");
-      await writeFile(diagramPath, diagram, "utf8");
-      log.info("wrote dependency diagram", { path: diagramPath });
-    }
+  if (includeMermaid) {
+    const diagram = generateMermaidDiagram(context, fileLevelGraph);
+    const diagramPath = outputDir ? join(outputDir, "DEPENDENCIES.mmd") : join(dir, "DEPENDENCIES.mmd");
+    await writeFile(diagramPath, diagram, "utf8");
+    log.info("wrote dependency diagram", { path: diagramPath });
   }
 }
 
@@ -299,7 +297,7 @@ program
   .option("--file-level", "Generate file-level dependency graph instead of package-level")
   .option("--ignore-tests", "Exclude test files from scanning")
   .option("--target-file <path>", "Score files relative to this target (proximity, test-pairing, same-package)")
-  .option("-f, --format <format>", "Output format: markdown (default) or json")
+  .option("-f, --format <format>", "Output format: json (default) or markdown")
   .option("--include <patterns...>", "Only include files matching these glob patterns")
   .option("--exclude <patterns...>", "Exclude files matching these glob patterns")
   .option("--files <paths...>", "Scan only these specific files (relative paths)")

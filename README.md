@@ -73,7 +73,7 @@ Scan a repository and generate architecture documentation.
 | Option | Description |
 |--------|-------------|
 | `-o, --output <dir>` | Output directory (defaults to repo root) |
-| `-f, --format <format>` | `markdown` (default) or `json` |
+| `-f, --format <format>` | `json` (default) or `markdown` |
 | `--no-mermaid` | Skip Mermaid diagram generation |
 | `--file-level` | File-level dependency graph (vs package-level) |
 | `--ignore-tests` | Exclude test files |
@@ -84,8 +84,9 @@ Scan a repository and generate architecture documentation.
 | `--summarize` | AI-powered file summaries (requires API key) |
 
 **Outputs:**
-- `ARCHITECTURE.md` — Architecture report with Mermaid diagrams
-- `ARCHITECTURE.json` — Structured JSON for the Interactive Explorer
+- `ARCHITECTURE.json` — Structured JSON for the Interactive Explorer (always generated)
+- `DEPENDENCIES.mmd` — Mermaid dependency diagram (unless `--no-mermaid`)
+- `ARCHITECTURE.md` — Architecture report (only with `-f markdown`)
 
 ### `diff [dir]`
 
