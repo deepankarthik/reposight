@@ -1,6 +1,6 @@
 {
   "name": "reposight",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Understand any codebase in minutes. Scans repositories, extracts architecture, and generates living documentation.",
   "type": "module",
   "main": "./dist/index.js",

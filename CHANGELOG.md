@@ -132,3 +132,25 @@
 ### Bug Fixes
 
 - fix(cli): change bin entry to bundle.mjs for npx compatibility
+
+## v0.1.4 - 2026-05-20
+
+### Bug Fixes
+
+- fix(action): remove stderr listener that misreported progress as errors
+- fix(cli): switch to CJS bundle for Action compatibility
+- fix(cli): bundle commander into CLI for self-contained execution
+- fix(action): add detailed error logging for CLI execution
+- fix(action): rename CLI bundle to .mjs for ESM compatibility
+- fix(action): use import.meta.url for __dirname in ESM
+- fix(action): bundle CLI inside Action to avoid npx dependency
+- fix(cli): output bundle directly to index.js for npm compatibility
+
+### Documentation
+
+- docs: add RELEASE.md with release process and troubleshooting notes
+
+### Chores
+
+- chore: remove accidentally committed tarball
+
