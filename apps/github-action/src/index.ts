@@ -255,7 +255,11 @@ function getChangedFiles(baseSha?: string): { changed: string[]; deleted: string
 
 async function run(): Promise<void> {
   try {
-    const token = process.env.GITHUB_TOKEN || core.getInput("token");
+    const token = core.getInput("github-token") || process.env.GITHUB_TOKEN;
+    if (!token) {
+      core.setFailed("github-token is required. Pass github-token: ${{ secrets.GITHUB_TOKEN }} in your workflow.");
+      return;
+    }
     const octokit = github.getOctokit(token);
     const context = github.context;
     const eventName = context.eventName;

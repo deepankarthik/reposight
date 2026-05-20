@@ -3,6 +3,10 @@ description: 'Auto-generate and update architecture documentation for your codeb
 author: 'deepankarthik'
 
 inputs:
+  github-token:
+    description: 'GitHub token for API access and committing'
+    required: false
+    default: ${{ github.token }}
   commit:
     description: 'Auto-commit updated ARCHITECTURE.json to the repo'
     required: false

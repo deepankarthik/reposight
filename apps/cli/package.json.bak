@@ -33,9 +33,16 @@
     "living-docs"
   ],
   "scripts": {
-    "build": "node build-cli.mjs"
+    "build": "node ../../build-cli.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "node ../../build-cli.mjs && node ../../prepublish.mjs",
+    "postpublish": "node ../../postpublish.mjs"
   },
   "dependencies": {
+    "@reposight/shared": "workspace:*",
+    "@reposight/context-engine": "workspace:*",
+    "@reposight/ai": "workspace:*",
     "commander": "^12.1.0",
     "typescript": "^5.7.2"
   },

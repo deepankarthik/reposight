@@ -11,7 +11,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  repolens:
+  reposight:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +21,7 @@ jobs:
 
       - uses: ./apps/github-action
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           commit: true
           comment: true
           summarize: false
