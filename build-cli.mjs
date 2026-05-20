@@ -20,7 +20,7 @@ await build({
   platform: "node",
   target: "node18",
   format: "esm",
-  external: [...nodeBuiltins, "commander", "typescript"],
+  external: [...nodeBuiltins],
   sourcemap: false,
   minify: false,
   define: {
