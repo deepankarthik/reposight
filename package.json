@@ -9,7 +9,7 @@
     "build": "tsc -b",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "dev:cli": "pnpm --filter @repolens/cli dev",
+    "dev:cli": "pnpm --filter repolens dev",
     "clean": "pnpm -r exec rm -rf dist"
   },
   "devDependencies": {
