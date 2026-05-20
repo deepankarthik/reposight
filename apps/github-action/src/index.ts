@@ -141,12 +141,17 @@ function formatDiffComment(baseReport: JsonReport, headReport: JsonReport, baseR
 async function runScan(files?: string[], summarize?: boolean): Promise<JsonReport> {
   const outputDir = core.getInput("output-dir");
   const jsonPath = join(outputDir, "ARCHITECTURE.json");
-  const args = ["scan", ".", "-f", "json", "-o", outputDir];
+  const args = ["reposight", "scan", ".", "-f", "json", "-o", outputDir];
   if (core.getInput("include-mermaid") !== "true") args.push("--no-mermaid");
   if (files?.length) args.push("--files", ...files);
   if (summarize) args.push("--summarize");
 
-  await exec.exec("npx", ["reposight", ...args]);
+  core.info(`Running: npx ${args.join(" ")}`);
+  await exec.exec("npx", args);
+
+  if (!existsSync(jsonPath)) {
+    throw new Error(`Expected output file not found: ${jsonPath}`);
+  }
 
   const report = JSON.parse(readFileSync(jsonPath, "utf8")) as JsonReport;
   return report;
