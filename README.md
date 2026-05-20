@@ -1,12 +1,12 @@
-# RepoLens
+# RepoSight
 
 > Understand any codebase in minutes, not days.
 
-[![npm version](https://img.shields.io/npm/v/reposight.svg)](https://www.npmjs.com/package/repolens)
+[![npm version](https://img.shields.io/npm/v/reposight.svg)](https://www.npmjs.com/package/reposight)
 [![CI](https://github.com/deepankarthik/reposight/actions/workflows/ci.yml/badge.svg)](https://github.com/deepankarthik/reposight/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-RepoLens scans a repository, extracts its architecture (files, symbols, imports), and generates living documentation. Built for developers who need to understand unfamiliar code quickly — onboarding to a new team, reviewing pull requests, or navigating legacy codebases.
+RepoSight scans a repository, extracts its architecture (files, symbols, imports), and generates living documentation. Built for developers who need to understand unfamiliar code quickly — onboarding to a new team, reviewing pull requests, or navigating legacy codebases.
 
 **No code leaves your machine.** Everything runs locally.
 
@@ -38,9 +38,9 @@ Or use without installing:
 npx reposight scan .
 ```
 
-## Why RepoLens?
+## Why RepoSight?
 
-| | RepoLens | CodeSee | Sourcegraph |
+| | RepoSight | CodeSee | Sourcegraph |
 |---|---|---|---|
 | **Cost** | Free, open-source | $49+/user/month | $49+/user/month |
 | **Setup** | `npx reposight scan .` | SaaS signup, GitHub app | Self-host or cloud |
@@ -49,7 +49,7 @@ npx reposight scan .
 | **Offline** | Full support | No | No |
 | **Self-hosted** | Yes | No | Limited |
 
-**RepoLens is the `prettier` of architecture docs** — run it, get docs, done. No SaaS, no signup, no pricing tiers.
+**RepoSight is the `prettier` of architecture docs** — run it, get docs, done. No SaaS, no signup, no pricing tiers.
 
 ## Features
 
@@ -108,7 +108,6 @@ Copy the web UI next to your `ARCHITECTURE.json` for local viewing.
 | Option | Description |
 |--------|-------------|
 | `-o, --output <dir>` | Output directory (defaults to current directory) |
-| `--download` | Download the latest UI from GitHub instead of copying locally |
 
 ### `serve [dir]`
 
@@ -154,7 +153,7 @@ Add `.github/workflows/reposight.yml` to your repo:
 
 ```yaml
 jobs:
-  repolens:
+  reposight:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -196,7 +195,7 @@ Or use environment variables:
 | `AI_PROVIDER_BASE_URL` | `https://api.openai.com/v1` | AI provider endpoint |
 | `AI_PROVIDER_API_KEY` | _(none)_ | API key for AI summaries |
 | `AI_PROVIDER_MODEL` | `gpt-4o-mini` | Model name |
-| `REPOLENS_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `REPOSIGHT_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 
 ## How It Works
 
@@ -209,7 +208,7 @@ Or use environment variables:
 ## Project Structure
 
 ```
-repolens/
+reposight/
 ├── packages/
 │   ├── shared/           # Core types, config, errors, logger
 │   ├── context-engine/   # Scanner, symbol extractor, import graph
@@ -218,7 +217,7 @@ repolens/
 │   ├── cli/              # CLI: scan, diff, trace, init, explorer, serve
 │   ├── web/              # Interactive Explorer (static HTML)
 │   └── github-action/    # GitHub Action for auto-updating docs
-└── .github/workflows/    # CI pipeline + RepoLens action example
+└── .github/workflows/    # CI pipeline + RepoSight action example
 ```
 
 ## Development
