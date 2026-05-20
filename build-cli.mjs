@@ -1,5 +1,9 @@
 import { build } from "esbuild";
 import { writeFileSync, chmodSync, copyFileSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const nodeBuiltins = [
   "fs", "path", "os", "crypto", "stream", "util", "events",
@@ -10,9 +14,9 @@ const nodeBuiltins = [
 ];
 
 await build({
-  entryPoints: ["apps/cli/src/index.ts"],
+  entryPoints: [join(__dirname, "apps/cli/src/index.ts")],
   bundle: true,
-  outfile: "apps/cli/dist/bundle.mjs",
+  outfile: join(__dirname, "apps/cli/dist/bundle.mjs"),
   platform: "node",
   target: "node18",
   format: "esm",
@@ -28,11 +32,10 @@ const wrapper = `#!/usr/bin/env node
 import "./bundle.mjs";
 `;
 
-writeFileSync("apps/cli/dist/index.js", wrapper);
-chmodSync("apps/cli/dist/index.js", 0o755);
-
-mkdirSync("apps/cli/dist", { recursive: true });
-copyFileSync("apps/web/public/index.html", "apps/cli/dist/index.html");
+mkdirSync(join(__dirname, "apps/cli/dist"), { recursive: true });
+writeFileSync(join(__dirname, "apps/cli/dist/index.js"), wrapper);
+chmodSync(join(__dirname, "apps/cli/dist/index.js"), 0o755);
+copyFileSync(join(__dirname, "apps/web/public/index.html"), join(__dirname, "apps/cli/dist/index.html"));
 
 console.log("Bundle created at apps/cli/dist/bundle.mjs");
 console.log("Explorer UI copied to apps/cli/dist/index.html");
