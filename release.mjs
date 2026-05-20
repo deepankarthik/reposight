@@ -45,9 +45,12 @@ function bumpVersion(current, type, prereleaseId) {
 
   switch (type) {
     case "patch":
-      v.patch++;
-      v.prerelease = null;
-      v.prereleaseNum = 0;
+      if (v.prerelease) {
+        v.prerelease = null;
+        v.prereleaseNum = 0;
+      } else {
+        v.patch++;
+      }
       break;
     case "minor":
       v.minor++;
