@@ -16,7 +16,7 @@ const nodeBuiltins = [
 await build({
   entryPoints: [join(__dirname, "apps/cli/src/index.ts")],
   bundle: true,
-  outfile: join(__dirname, "apps/cli/dist/bundle.mjs"),
+  outfile: join(__dirname, "apps/cli/dist/index.js"),
   platform: "node",
   target: "node18",
   format: "esm",
@@ -28,15 +28,9 @@ await build({
   }
 });
 
-const wrapper = `#!/usr/bin/env node
-import "./bundle.mjs";
-`;
-
 mkdirSync(join(__dirname, "apps/cli/dist"), { recursive: true });
-chmodSync(join(__dirname, "apps/cli/dist/bundle.mjs"), 0o755);
-writeFileSync(join(__dirname, "apps/cli/dist/index.js"), wrapper);
 chmodSync(join(__dirname, "apps/cli/dist/index.js"), 0o755);
 copyFileSync(join(__dirname, "apps/web/public/index.html"), join(__dirname, "apps/cli/dist/index.html"));
 
-console.log("Bundle created at apps/cli/dist/bundle.mjs");
+console.log("Bundle created at apps/cli/dist/index.js");
 console.log("Explorer UI copied to apps/cli/dist/index.html");
