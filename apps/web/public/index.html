@@ -953,14 +953,24 @@ html += '</div>';
             <button onclick="switchDiffMode('github')">GitHub</button>
           </div>
           <div id="diff-local" class="diff-panel active">
-            <div class="diff-drop-zone" id="diffDropZone" onclick="document.getElementById('diffBaseFile').click()">
-              <div class="drop-icon">📁</div>
-              <div class="drop-text">Drop ARCHITECTURE.json files here or click to browse</div>
-              <div class="drop-hint">Select base file first, then head file</div>
-              <div id="dropFileStatus"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+              <div>
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Base (original)</div>
+                <div class="diff-drop-zone" id="diffDropBase">
+                  <div class="drop-icon">📁</div>
+                  <div class="drop-text" id="diffBaseText">Drop base file here or click to browse</div>
+                </div>
+                <input type="file" id="diffBaseFile" accept=".json" style="display:none">
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Head (changed)</div>
+                <div class="diff-drop-zone" id="diffDropHead">
+                  <div class="drop-icon">📁</div>
+                  <div class="drop-text" id="diffHeadText">Drop head file here or click to browse</div>
+                </div>
+                <input type="file" id="diffHeadFile" accept=".json" style="display:none">
+              </div>
             </div>
-          <input type="file" id="diffBaseFile" accept=".json" style="display:none" onchange="diffSelectedFiles.base = this.files[0]; onFileSelect('base', this.files[0]?.name)">
-          <input type="file" id="diffHeadFile" accept=".json" style="display:none" onchange="diffSelectedFiles.head = this.files[0]; onFileSelect('head', this.files[0]?.name)">
             <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
               <span id="diffBaseLabel" style="font-size:13px;color:var(--text-muted);">Base: not selected</span>
               <span style="color:var(--text-muted);">→</span>
@@ -995,33 +1005,35 @@ html += '</div>';
         </div>
       `;
 
-      const dropZone = document.getElementById('diffDropZone');
-
-      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.json'));
-        if (files.length >= 2) {
-          diffSelectedFiles.base = files[0];
-          diffSelectedFiles.head = files[1];
-          onFileSelect('base', files[0].name);
-          onFileSelect('head', files[1].name);
-        } else if (files.length === 1) {
-          if (!diffSelectedFiles.base) {
-            diffSelectedFiles.base = files[0];
-            onFileSelect('base', files[0].name);
-          } else if (!diffSelectedFiles.head) {
-            diffSelectedFiles.head = files[0];
-            onFileSelect('head', files[0].name);
+      function setupDiffDropZone(zoneId, inputId, type) {
+        var zone = document.getElementById(zoneId);
+        var input = document.getElementById(inputId);
+        zone.addEventListener('click', function() { input.click(); });
+        zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+        zone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          zone.classList.remove('dragover');
+          var file = e.dataTransfer.files[0];
+          if (!file || !file.name.endsWith('.json')) return;
+          diffSelectedFiles[type] = file;
+          onFileSelect(type, file.name);
+        });
+        input.addEventListener('change', function() {
+          if (this.files[0]) {
+            diffSelectedFiles[type] = this.files[0];
+            onFileSelect(type, this.files[0].name);
           }
-        }
-      });
+        });
+      }
+      setupDiffDropZone('diffDropBase', 'diffBaseFile', 'base');
+      setupDiffDropZone('diffDropHead', 'diffHeadFile', 'head');
     }
 
     function onFileSelect(type, name) {
-      document.getElementById(`diff${type.charAt(0).toUpperCase() + type.slice(1)}Label`).textContent = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${name || 'not selected'}`;
+      document.getElementById('diff' + type.charAt(0).toUpperCase() + type.slice(1) + 'Label').textContent = type.charAt(0).toUpperCase() + type.slice(1) + ': ' + (name || 'not selected');
+      var textEl = document.getElementById('diff' + type.charAt(0).toUpperCase() + type.slice(1) + 'Text');
+      if (textEl) textEl.textContent = name ? '\uD83D\uDCC4 ' + name : 'Drop ' + type.charAt(0).toUpperCase() + type.slice(1) + ' file here or click to browse';
     }
 
     function switchDiffMode(mode) {
