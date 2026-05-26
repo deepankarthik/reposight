@@ -811,7 +811,7 @@
         const filename = result.id.split('/').pop();
         const symbolMatch = result.match?.symbolNames;
         const summaryMatch = result.match?.summary || result.match?.fileComment;
-        const sub = summaryMatch ? escapeHtml(summaryMatch[0]) : (file?.summary ? escapeHtml(file.summary.substring(0, 80)) : result.id);
+        const sub = summaryMatch ? escapeHtml(summaryMatch[0]) : (file?.summary ? escapeHtml(file.summary.substring(0, 80)) : escapeHtml(result.id));
         html += `<div class="search-result" data-action="select-search" data-index="${idx}">`;
         html += `<div class="search-result-type">` + (symbolMatch ? 'FN' : 'FILE') + ` file</div>`;
         html += `<div class="search-result-title">${escapeHtml(filename)}</div>`;
@@ -982,7 +982,7 @@ html += '</div>';
             <div class="diff-url-input">
               <div class="input-full">
                 <label>Repository</label>
-                <input type="text" id="diffRepo" placeholder="owner/repo" value="${detectedRepo}">
+                <input type="text" id="diffRepo" placeholder="owner/repo" value="${escapeHtml(detectedRepo)}">
               </div>
               <div class="input-row">
                 <div>
