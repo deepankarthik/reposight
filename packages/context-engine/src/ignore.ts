@@ -81,6 +81,7 @@ function gitignoreToRegex(pattern: string): RegExp {
   const core = pattern
     .replace(/^\//, "")
     .replace(/\/$/, "")
+    .replace(/\\/g, "\\\\")
     .replace(/\./g, "\\.")
     .replace(/\+/g, "\\+")
     .replace(/\?/g, "[^/]")
