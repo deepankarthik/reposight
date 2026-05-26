@@ -41,7 +41,7 @@
     "@reposight/shared": "workspace:*",
     "@reposight/context-engine": "workspace:*",
     "@reposight/ai": "workspace:*",
-    "commander": "^12.1.0",
+    "commander": "^14.0.3",
     "typescript": "^5.7.2"
   },
   "engines": {
