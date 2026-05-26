@@ -17,7 +17,7 @@ const RUST_STRUCT_RE = /^(?:pub\s+)?struct\s+(\w+)\s*(?:<[^>]*>\s*)?\{/gm;
 const RUST_ENUM_RE = /^(?:pub\s+)?enum\s+(\w+)\s*(?:<[^>]*>\s*)?\{/gm;
 const RUST_TRAIT_RE = /^(?:pub\s+)?trait\s+(\w+)\s*(?:<[^>]*>\s*)?\{/gm;
 const RUST_IMPL_RE = /^(?:pub\s+)?impl\s+(?:<[^>]*>\s+)?(\w+)(?:\s*<[^>]*>)?(?:\s+for\s+\w+)?\s*\{/gm;
-const RUST_IMPORT_RE = /^(?:pub\s+)?use\s+(.+);/gm;
+const RUST_IMPORT_RE = /^(?:pub\s+)?use\s+([^;]+);/gm;
 const RUST_MOD_RE = /^(?:pub\s+)?mod\s+(\w+);/gm;
 
 const JAVA_CLASS_RE = /^(?:public\s+|abstract\s+|final\s+)*(?:class|interface|enum)\s+(\w+)/gm;
