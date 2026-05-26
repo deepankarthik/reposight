@@ -21,7 +21,7 @@ const RUST_IMPORT_RE = /^(?:pub\s+)?use\s+([^;]+);/gm;
 const RUST_MOD_RE = /^(?:pub\s+)?mod\s+(\w+);/gm;
 
 const JAVA_CLASS_RE = /^(?:public\s+|abstract\s+|final\s+)*(?:class|interface|enum)\s+(\w+)/gm;
-const JAVA_METHOD_RE = /^\s*(?:public|private|protected|static|final|abstract|synchronized|\s)+[\w<>[\] ,\s]+\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{/gm;
+const JAVA_METHOD_RE = /^\s*(?:public|private|protected|static|final|abstract|synchronized\s+)*[\w<>[\] ,]+\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+\w+(?:\s*,\s*\w+)*)?\s*\{/gm;
 const JAVA_IMPORT_RE = /^import\s+(static\s+)?([\w.*]+);/gm;
 
 function extractLeadingComment(source: string, lines: string[], symbolLine: number): string | undefined {
