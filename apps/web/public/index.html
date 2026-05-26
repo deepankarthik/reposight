@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RepoSight Explorer</title>
-  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.2/dist/umd/index.min.js"></script>
   <style>
     :root {
@@ -88,7 +88,6 @@
     .drop-loading { display: none; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; color: var(--accent); font-size: 16px; }
     .drop-loading.active { display: flex; }
     .spinner { width: 24px; height: 24px; border: 3px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
     #app { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .main { flex: 1; display: flex; overflow: hidden; }
     #graph { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); min-height: 0; }
@@ -96,6 +95,10 @@
     #dataflow { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; }
     #diff { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; padding: 20px; }
     .sidebar { width: 380px; background: var(--bg-secondary); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
     .sidebar h3 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
 
     .file-path { font-size: 15px; color: var(--accent); margin-bottom: 8px; font-weight: 500; word-break: break-all; }
@@ -318,20 +321,22 @@
       { name: "Other", pattern: /.*/, color: "#666" }
     ];
 
-    let network = null;
-    let nodesDataSet = null;
-    let edgesDataSet = null;
-    let allNodesData = [];
-    let allEdgesData = [];
-    let repoData = null;
-    let currentTab = 'graph';
-    let layerColors = {};
-    let searchActiveIndex = -1;
-    let searchResults = [];
-    let miniSearch = null;
-    let crossRefIndex = {};
-    let importsMap = {};
-    let importedByMap = {};
+    // ---- Globals (module-level state) ----
+    var network = null;
+    var nodesDataSet = null;
+    var edgesDataSet = null;
+    var allNodesData = [];
+    var allEdgesData = [];
+    var repoData = null;
+    var currentTab = 'graph';
+    var layerColors = {};
+    var searchActiveIndex = -1;
+    var searchResults = [];
+    var miniSearch = null;
+    var crossRefIndex = {};
+    var importsMap = {};
+    var importedByMap = {};
+    var diffSelectedFiles = { base: null, head: null };
 
     function initTheme() {
       const saved = localStorage.getItem('reposight-theme');
@@ -571,8 +576,8 @@
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
           <div class="language-tag">${escapeHtml(file.language || 'unknown')}</div>
           <div class="flow-role" style="color:${layer.color};border-color:${layer.color};cursor:default">${escapeHtml(layer.name)} Layer</div>
-          <button class="btn btn-sm" onclick="viewFileSource('${escapeJs(file.path)}')">View Source</button>
-          <button class="btn btn-sm" onclick="traceDataFlowFrom('${escapeJs(file.path)}')">Trace Flow</button>
+          <button class="btn btn-sm" data-action="view-source" data-path="${escapeHtml(file.path)}">View Source</button>
+          <button class="btn btn-sm" data-action="trace-flow" data-path="${escapeHtml(file.path)}">Trace Flow</button>
         </div>
         <div id="file-content-viewer"></div>
       `;
@@ -583,21 +588,21 @@
           const cls = s.kind === 'function' ? 'fn' : s.kind === 'class' ? 'cls' : s.kind === 'interface' ? 'int' : s.kind === 'method' ? 'fn' : 'var';
           const refCount = (crossRefIndex[s.name.toLowerCase()] || []).length;
           const refBadge = refCount > 1 ? ` <span style="color:var(--text-muted);font-size:10px">(${refCount})</span>` : '';
-          html += `<span class="symbol-tag ${cls}" style="cursor:pointer" onclick="showSymbolCrossRef('${escapeJs(s.name)}', ${s.line})">${escapeHtml(s.kind)} ${escapeHtml(s.name)}${s.line ? ' (L' + s.line + ')' : ''}${refBadge}</span>`;
+          html += `<span class="symbol-tag ${cls}" style="cursor:pointer" data-action="symbol-ref" data-name="${escapeHtml(s.name)}" data-line="${s.line}">${escapeHtml(s.kind)} ${escapeHtml(s.name)}${s.line ? ' (L' + s.line + ')' : ''}${refBadge}</span>`;
         });
         html += '</div>';
       }
 
       if (file.imports && file.imports.length > 0) {
         html += '<div class="section"><h3>Imports</h3>';
-        file.imports.forEach(imp => { html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">→ ${escapeHtml(imp)}</a>`; });
+        file.imports.forEach(imp => { html += `<a class="import-link" data-action="highlight" data-path="${escapeHtml(imp)}">→ ${escapeHtml(imp)}</a>`; });
         html += '</div>';
       }
 
       const importedBy = allEdgesData.filter(e => e.to === filePath).map(e => e.from);
       if (importedBy.length > 0) {
         html += `<div class="section"><h3>Imported By (${importedBy.length})</h3>`;
-        importedBy.forEach(imp => { html += `<a class="import-link" onclick="highlightNode('${escapeJs(imp)}')">← ${escapeHtml(imp.split('/').pop())}</a>`; });
+        importedBy.forEach(imp => { html += `<a class="import-link" data-action="highlight" data-path="${escapeHtml(imp)}">← ${escapeHtml(imp.split('/').pop())}</a>`; });
         html += '</div>';
       }
 
@@ -634,7 +639,7 @@
         html += `<div class="arch-layer" style="border-left: 3px solid ${layer.color};">`;
         html += `<h4 style="color: ${layer.color};">${layer.name} (${layer.files.length} files)</h4>`;
         html += '<div class="files">';
-        layer.files.forEach(f => { html += `<span class="arch-file" onclick="highlightNode('${escapeJs(f.path)}')">${escapeHtml(f.path.split('/').pop())}</span>`; });
+        layer.files.forEach(f => { html += `<span class="arch-file" data-action="highlight" data-path="${escapeHtml(f.path)}">${escapeHtml(f.path.split('/').pop())}</span>`; });
         html += '</div>';
         if (i < activeLayers.length - 1) {
           html += `<div class="arch-connections"><span style="color: var(--text-muted);">↓ depends on</span> <span>${activeLayers[i + 1].name}</span></div>`;
@@ -666,7 +671,7 @@
         const arrow = step.depth > 0 ? '<span class="flow-arrow">→</span>' : '';
         html += `<div class="flow-item" style="padding-left: ${indent}px;">`;
         html += `${arrow} <span class="flow-role" style="color:${step.layer.color};border-color:${step.layer.color}">${escapeHtml(step.layer.name)}</span>`;
-        html += `<span class="arch-file" onclick="highlightNode('${escapeJs(step.path)}')" style="margin-left: 8px;">${escapeHtml(step.path.split('/').pop())}</span>`;
+        html += `<span class="arch-file" data-action="highlight" data-path="${escapeHtml(step.path)}" style="margin-left: 8px;">${escapeHtml(step.path.split('/').pop())}</span>`;
         html += `<span style="color:var(--text-muted);font-size:10px;margin-left:6px;">(${step.importsCount} imports)</span>`;
         html += '</div>';
       });
@@ -778,13 +783,6 @@
           crossRef[key].push({ file: file.path, kind: s.kind, line: s.line });
         });
       });
-      repoData.files.forEach(file => {
-        if (!file.imports) return;
-        file.imports.forEach(imp => {
-          const impName = imp.replace(/\.js$/, '').replace(/^\.\/?/, '').split('/').pop().toLowerCase();
-          if (crossRef[impName]) crossRef[impName].push({ file: file.path, kind: 'import', line: null });
-        });
-      });
       return crossRef;
     }
 
@@ -814,7 +812,7 @@
         const symbolMatch = result.match?.symbolNames;
         const summaryMatch = result.match?.summary || result.match?.fileComment;
         const sub = summaryMatch ? escapeHtml(summaryMatch[0]) : (file?.summary ? escapeHtml(file.summary.substring(0, 80)) : result.id);
-        html += `<div class="search-result" data-index="${idx}" onmouseenter="setSearchActive(${idx})" onclick="selectSearchResult(${idx})">`;
+        html += `<div class="search-result" data-action="select-search" data-index="${idx}">`;
         html += `<div class="search-result-type">` + (symbolMatch ? 'FN' : 'FILE') + ` file</div>`;
         html += `<div class="search-result-title">${escapeHtml(filename)}</div>`;
         html += `<div class="search-result-subtitle">${escapeHtml(result.id)}</div>`;
@@ -871,10 +869,10 @@
       let html = sidebar.innerHTML;
       html += `<div class="crossref-section"><h3>Referenced In (${otherRefs.length})</h3>`;
       otherRefs.slice(0, 10).forEach(ref => {
-        html += `<div class="crossref-item" onclick="highlightNode('${escapeJs(ref.file)}')">`;
-        html += `<span class="crossref-file">${escapeHtml(ref.file.split('/').pop())}</span>`;
-        if (ref.line) html += `<span class="crossref-line">L${ref.line}</span>`;
-        html += '</div>';
+html += `<div class="crossref-item" data-action="highlight" data-path="${escapeHtml(ref.file)}">`;
+html += `<span class="crossref-file">${escapeHtml(ref.file.split('/').pop())}</span>`;
+if (ref.line) html += `<span class="crossref-line">L${ref.line}</span>`;
+html += '</div>';
       });
       html += '</div>';
       sidebar.innerHTML = html;
@@ -908,6 +906,18 @@
       }
     }
 
+    var SYNTAX_KEYWORDS = {
+      ts: /\b(const|let|var|function|class|interface|type|import|export|from|return|if|else|for|while|switch|case|break|continue|try|catch|finally|throw|new|this|async|await|yield|typeof|instanceof|in|of|extends|implements|private|public|protected|static|readonly|abstract|enum|namespace|module|declare|as|is|keyof|infer|void|null|undefined|never|any|string|number|boolean|object|symbol|true|false)\b/g,
+      py: /\b(def|class|import|from|return|if|elif|else|for|while|try|except|finally|raise|with|as|yield|async|await|lambda|pass|break|continue|and|or|not|is|in|True|False|None|self|print|global|nonlocal|assert|del)\b/g,
+      go: /\b(func|package|import|var|const|type|struct|interface|map|chan|go|defer|return|if|else|for|range|switch|case|break|continue|fallthrough|select|nil|true|false|bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|byte|rune|error|make|new|len|cap|append|copy|delete|close|panic|recover)\b/g,
+      rs: /\b(fn|let|mut|pub|use|mod|struct|enum|impl|trait|type|const|static|ref|self|Self|super|crate|where|for|loop|while|if|else|match|return|async|await|move|dyn|unsafe|extern|true|false|Some|None|Ok|Err|Vec|String|str|i32|i64|u32|u64|f32|f64|bool|char|Box|Rc|Arc|Option|Result)\b/g,
+    };
+    var SYNTAX_STR = /(["'`])(?:(?!\1|\\).|\\.)*?\1/g;
+    var SYNTAX_COMMENTS_TS = /(\/\/.*$|\/\*[\s\S]*?\*\/)/g;
+    var SYNTAX_COMMENTS_PY = /(#.*$)/g;
+    var SYNTAX_NUM = /\b(\d+\.?\d*)\b/g;
+    var SYNTAX_FN = /\b([a-zA-Z_]\w*)\s*(?=\()/g;
+
     function highlightSyntax(source, filePath) {
       const lines = source.split('\n');
       const lang = filePath.split('.').pop();
@@ -915,22 +925,19 @@
       const isPy = lang === 'py';
       const isGo = lang === 'go';
       const isRust = lang === 'rs';
+      const kw = isTsJs ? SYNTAX_KEYWORDS.ts : isPy ? SYNTAX_KEYWORDS.py : isGo ? SYNTAX_KEYWORDS.go : isRust ? SYNTAX_KEYWORDS.rs : null;
+      var comments = isPy ? SYNTAX_COMMENTS_PY : SYNTAX_COMMENTS_TS;
 
-      return lines.map((line, idx) => {
-        let escaped = escapeHtml(line);
-        if (isTsJs || isPy || isGo || isRust) {
-          const keywords = isTsJs ? /\b(const|let|var|function|class|interface|type|import|export|from|return|if|else|for|while|switch|case|break|continue|try|catch|finally|throw|new|this|async|await|yield|typeof|instanceof|in|of|extends|implements|private|public|protected|static|readonly|abstract|enum|namespace|module|declare|as|is|keyof|infer|void|null|undefined|never|any|string|number|boolean|object|symbol|true|false)\b/g :
-                           isPy ? /\b(def|class|import|from|return|if|elif|else|for|while|try|except|finally|raise|with|as|yield|async|await|lambda|pass|break|continue|and|or|not|is|in|True|False|None|self|print|global|nonlocal|assert|del)\b/g :
-                           isGo ? /\b(func|package|import|var|const|type|struct|interface|map|chan|go|defer|return|if|else|for|range|switch|case|break|continue|fallthrough|select|nil|true|false|bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|byte|rune|error|make|new|len|cap|append|copy|delete|close|panic|recover)\b/g :
-                           /\b(fn|let|mut|pub|use|mod|struct|enum|impl|trait|type|const|static|ref|self|Self|super|crate|where|for|loop|while|if|else|match|return|async|await|move|dyn|unsafe|extern|true|false|Some|None|Ok|Err|Vec|String|str|i32|i64|u32|u64|f32|f64|bool|char|Box|Rc|Arc|Option|Result)\b/g;
-          escaped = escaped.replace(keywords, '<span class="kw">$1</span>');
-          escaped = escaped.replace(/(["'`])(?:(?!\1|\\).|\\.)*?\1/g, '<span class="str">$&</span>');
-          const comments = isPy ? /(#.*$)/g : /(\/\/.*$|\/\*[\s\S]*?\*\/)/g;
+      return lines.map(function(line, idx) {
+        var escaped = escapeHtml(line);
+        if (kw) {
+          escaped = escaped.replace(kw, '<span class="kw">$1</span>');
+          escaped = escaped.replace(SYNTAX_STR, '<span class="str">$&</span>');
           escaped = escaped.replace(comments, '<span class="cmt">$&</span>');
-          escaped = escaped.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
-          escaped = escaped.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, '<span class="fn">$1</span>(');
+          escaped = escaped.replace(SYNTAX_NUM, '<span class="num">$1</span>');
+          escaped = escaped.replace(SYNTAX_FN, '<span class="fn">$1</span>(');
         }
-        return `<span class="line-num">${idx + 1}</span>${escaped}`;
+        return '<span class="line-num">' + (idx + 1) + '</span>' + escaped;
       }).join('\n');
     }
 
@@ -952,8 +959,8 @@
               <div class="drop-hint">Select base file first, then head file</div>
               <div id="dropFileStatus"></div>
             </div>
-            <input type="file" id="diffBaseFile" accept=".json" style="display:none" onchange="onFileSelect('base', this.files[0]?.name)">
-            <input type="file" id="diffHeadFile" accept=".json" style="display:none" onchange="onFileSelect('head', this.files[0]?.name)">
+          <input type="file" id="diffBaseFile" accept=".json" style="display:none" onchange="diffSelectedFiles.base = this.files[0]; onFileSelect('base', this.files[0]?.name)">
+          <input type="file" id="diffHeadFile" accept=".json" style="display:none" onchange="diffSelectedFiles.head = this.files[0]; onFileSelect('head', this.files[0]?.name)">
             <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
               <span id="diffBaseLabel" style="font-size:13px;color:var(--text-muted);">Base: not selected</span>
               <span style="color:var(--text-muted);">→</span>
@@ -989,7 +996,6 @@
       `;
 
       const dropZone = document.getElementById('diffDropZone');
-      let selectedFiles = { base: null, head: null };
 
       dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
       dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -998,18 +1004,16 @@
         dropZone.classList.remove('dragover');
         const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.json'));
         if (files.length >= 2) {
-          selectedFiles.base = files[0];
-          selectedFiles.head = files[1];
-          document.getElementById('diffBaseFile').files = e.dataTransfer.files;
-          document.getElementById('diffHeadFile').files = e.dataTransfer.files;
+          diffSelectedFiles.base = files[0];
+          diffSelectedFiles.head = files[1];
           onFileSelect('base', files[0].name);
           onFileSelect('head', files[1].name);
         } else if (files.length === 1) {
-          if (!selectedFiles.base) {
-            selectedFiles.base = files[0];
+          if (!diffSelectedFiles.base) {
+            diffSelectedFiles.base = files[0];
             onFileSelect('base', files[0].name);
-          } else if (!selectedFiles.head) {
-            selectedFiles.head = files[0];
+          } else if (!diffSelectedFiles.head) {
+            diffSelectedFiles.head = files[0];
             onFileSelect('head', files[0].name);
           }
         }
@@ -1028,29 +1032,30 @@
     }
 
     function loadDiffFromFiles() {
-      const baseInput = document.getElementById('diffBaseFile');
-      const headInput = document.getElementById('diffHeadFile');
-      const content = document.getElementById('diff-content');
+      var content = document.getElementById('diff-content');
 
-      if (!baseInput.files.length || !headInput.files.length) {
+      if (!diffSelectedFiles.base || !diffSelectedFiles.head) {
         content.innerHTML = '<div class="diff-empty">Select both base and head JSON files.</div>';
         return;
       }
 
-      const reader = (file) => new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(JSON.parse(r.result));
-        r.onerror = reject;
-        r.readAsText(file);
-      });
+      var reader = function(file) {
+        return new Promise(function(resolve, reject) {
+          var r = new FileReader();
+          r.onload = function() { resolve(JSON.parse(r.result)); };
+          r.onerror = reject;
+          r.readAsText(file);
+        });
+      };
 
       content.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Loading files...</div></div>';
-      Promise.all([reader(baseInput.files[0]), reader(headInput.files[0])])
-        .then(([baseData, headData]) => {
-          const diff = computeDiff(baseData, headData);
-          renderDiffResults(diff, baseInput.files[0].name, headInput.files[0].name, content);
+      Promise.all([reader(diffSelectedFiles.base), reader(diffSelectedFiles.head)])
+        .then(function(data) {
+          var baseData = data[0], headData = data[1];
+          var diff = computeDiff(baseData, headData);
+          renderDiffResults(diff, diffSelectedFiles.base.name, diffSelectedFiles.head.name, content);
         })
-        .catch(e => { content.innerHTML = `<div class="diff-empty">Error: ${escapeHtml(e.message)}</div>`; });
+        .catch(function(e) { content.innerHTML = '<div class="diff-empty">Error: ' + escapeHtml(e.message) + '</div>'; });
     }
 
     async function loadDiffFromGitHub() {
@@ -1145,20 +1150,20 @@
     function renderDiffResults(diff, baseName, headName, container) {
       let html = `
         <div class="diff-summary">
-          <div class="diff-stat added" onclick="filterDiffResults('added')"><div class="diff-stat-value">${diff.added.length}</div><div class="diff-stat-label">Added</div></div>
-          <div class="diff-stat removed" onclick="filterDiffResults('removed')"><div class="diff-stat-value">${diff.removed.length}</div><div class="diff-stat-label">Removed</div></div>
-          <div class="diff-stat modified" onclick="filterDiffResults('modified')"><div class="diff-stat-value">${diff.modified.length}</div><div class="diff-stat-label">Modified</div></div>
-          <div class="diff-stat unchanged" onclick="filterDiffResults('all')"><div class="diff-stat-value">${diff.unchanged.length}</div><div class="diff-stat-label">Unchanged</div></div>
+          <div class="diff-stat added" data-action="filter-diff" data-type="added"><div class="diff-stat-value">${diff.added.length}</div><div class="diff-stat-label">Added</div></div>
+          <div class="diff-stat removed" data-action="filter-diff" data-type="removed"><div class="diff-stat-value">${diff.removed.length}</div><div class="diff-stat-label">Removed</div></div>
+          <div class="diff-stat modified" data-action="filter-diff" data-type="modified"><div class="diff-stat-value">${diff.modified.length}</div><div class="diff-stat-label">Modified</div></div>
+          <div class="diff-stat unchanged" data-action="filter-diff" data-type="all"><div class="diff-stat-value">${diff.unchanged.length}</div><div class="diff-stat-label">Unchanged</div></div>
         </div>
         <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px;">Comparing ${escapeHtml(baseName)} (${diff.baseCount} files) → ${escapeHtml(headName)} (${diff.headCount} files)</p>
       `;
 
       if (diff.added.length + diff.removed.length + diff.modified.length > 3) {
         html += `<div class="diff-filters">
-          <button class="diff-filter active" onclick="filterDiffResults('all')">All (${diff.added.length + diff.removed.length + diff.modified.length})</button>
-          <button class="diff-filter" onclick="filterDiffResults('added')">Added (${diff.added.length})</button>
-          <button class="diff-filter" onclick="filterDiffResults('removed')">Removed (${diff.removed.length})</button>
-          <button class="diff-filter" onclick="filterDiffResults('modified')">Modified (${diff.modified.length})</button>
+          <button class="diff-filter active" data-action="filter-diff" data-type="all">All (${diff.added.length + diff.removed.length + diff.modified.length})</button>
+          <button class="diff-filter" data-action="filter-diff" data-type="added">Added (${diff.added.length})</button>
+          <button class="diff-filter" data-action="filter-diff" data-type="removed">Removed (${diff.removed.length})</button>
+          <button class="diff-filter" data-action="filter-diff" data-type="modified">Modified (${diff.modified.length})</button>
         </div>`;
       }
 
@@ -1186,7 +1191,7 @@
           html += '<div class="diff-result-group" data-type="modified">';
           html += `<h3 style="color:var(--orange);margin:16px 0 8px;font-size:14px;">Modified Files (${diff.modified.length})</h3>`;
           diff.modified.slice(0, 20).forEach(m => {
-            html += `<div class="diff-file modified" onclick="this.classList.toggle('collapsed')"><div class="diff-file-header diff-file-toggle"><span class="diff-file-path">${escapeHtml(m.path)}</span><span class="diff-file-badge modified">${m.changes.length} change${m.changes.length > 1 ? 's' : ''}</span></div><div class="diff-section">`;
+            html += `<div class="diff-file modified" data-action="toggle-collapse"><div class="diff-file-header diff-file-toggle"><span class="diff-file-path">${escapeHtml(m.path)}</span><span class="diff-file-badge modified">${m.changes.length} change${m.changes.length > 1 ? 's' : ''}</span></div><div class="diff-section">`;
             m.changes.slice(0, 8).forEach(c => {
               if (c.type === 'summary') html += '<div class="diff-change modified">Summary changed</div>';
               else if (c.type === 'symbol-added') html += `<div class="diff-change added">${escapeHtml(c.kind)} ${escapeHtml(c.name)}</div>`;
@@ -1217,12 +1222,31 @@
         document.querySelectorAll('.diff-result-group').forEach(g => {
           g.style.display = g.dataset.type === type ? 'block' : 'none';
         });
-        document.querySelector(`.diff-filter[onclick*="${type}"]`)?.classList.add('active');
+        document.querySelector(`.diff-filter[data-type="${type}"]`)?.classList.add('active');
       }
 
-      const statEl = document.querySelector(`.diff-stat.${type}`);
+      var statEl = document.querySelector('.diff-stat' + (type === 'all' ? '' : '.' + type));
       if (statEl) statEl.classList.add('active');
     }
+
+    // Delegated click handler — replaces dynamic inline onclick (XSS prevention)
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      switch (el.dataset.action) {
+        case 'highlight': highlightNode(el.dataset.path); break;
+        case 'view-source': viewFileSource(el.dataset.path); break;
+        case 'trace-flow': traceDataFlowFrom(el.dataset.path); break;
+        case 'symbol-ref': showSymbolCrossRef(el.dataset.name, parseInt(el.dataset.line)); break;
+        case 'select-search': selectSearchResult(parseInt(el.dataset.index)); break;
+        case 'filter-diff': filterDiffResults(el.dataset.type); break;
+        case 'toggle-collapse': el.closest('.diff-file').classList.toggle('collapsed'); break;
+      }
+    });
+    document.addEventListener('mouseover', function(e) {
+      var el = e.target.closest('.search-result[data-index]');
+      if (el) setSearchActive(parseInt(el.dataset.index));
+    });
 
     initTheme();
     initDragDrop();
