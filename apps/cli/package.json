@@ -42,7 +42,7 @@
     "@reposight/context-engine": "workspace:*",
     "@reposight/ai": "workspace:*",
     "commander": "^12.1.0",
-    "typescript": "^5.7.2"
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
