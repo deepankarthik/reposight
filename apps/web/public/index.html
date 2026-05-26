@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RepoLens Explorer</title>
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.2/dist/umd/index.min.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0f;
@@ -290,7 +291,7 @@
     let layerColors = {};
     let searchActiveIndex = -1;
     let searchResults = [];
-    let searchIndex = [];
+    let miniSearch = null;
     let crossRefIndex = {};
     let importsMap = {};
     let importedByMap = {};
@@ -343,7 +344,7 @@
       } catch {
         repoData = getEmbeddedData();
       }
-      searchIndex = buildSearchIndex();
+      initMiniSearch();
       crossRefIndex = buildCrossRefIndex();
       initGraph(repoData);
       buildAdjacencyMaps();
@@ -662,20 +663,25 @@
       container.innerHTML = html;
     }
 
-    function buildSearchIndex() {
-      const index = [];
-      repoData.files.forEach(file => {
-        index.push({ type: 'file', path: file.path, title: file.path.split('/').pop(), subtitle: file.summary?.substring(0, 80) || file.language || '', content: file.summary || '' });
-        if (file.fileComment) {
-          index.push({ type: 'comment', path: file.path, title: file.path.split('/').pop() + ' (comment)', subtitle: file.fileComment.substring(0, 100), content: file.fileComment });
-        }
-        if (file.symbols) {
-          file.symbols.forEach(s => {
-            index.push({ type: 'symbol', path: file.path, title: s.name, subtitle: `${s.kind} in ${file.path.split('/').pop()}`, line: s.line, content: s.comment || '' });
-          });
+    function initMiniSearch() {
+      miniSearch = new MiniSearch({
+        fields: ['symbolNames', 'summary', 'fileComment', 'path', 'imports'],
+        storeFields: ['path', 'summary'],
+        searchOptions: {
+          prefix: true,
+          fuzzy: 0.2,
+          boost: { symbolNames: 10, fileComment: 5, summary: 5, path: 3, imports: 2 }
         }
       });
-      return index;
+      const docs = (repoData.files || []).map(file => ({
+        id: file.path,
+        symbolNames: (file.symbols || []).map(s => s.name).join(' '),
+        summary: file.summary || '',
+        fileComment: file.fileComment || '',
+        path: file.path,
+        imports: (file.imports || []).join(' '),
+      }));
+      miniSearch.addAll(docs);
     }
 
     function buildCrossRefIndex() {
@@ -699,7 +705,7 @@
     }
 
     document.getElementById('search').addEventListener('input', function(e) {
-      const query = e.target.value.trim().toLowerCase();
+      const query = e.target.value.trim();
       const dropdown = document.getElementById('searchDropdown');
       searchActiveIndex = -1;
 
@@ -709,42 +715,39 @@
         return;
       }
 
-      searchResults = searchIndex.filter(item =>
-        item.title.toLowerCase().includes(query) ||
-        item.path.toLowerCase().includes(query) ||
-        item.subtitle.toLowerCase().includes(query) ||
-        item.content.toLowerCase().includes(query)
-      ).slice(0, 20);
+      searchResults = miniSearch ? miniSearch.search(query, { prefix: true, fuzzy: 0.2 }).slice(0, 20) : [];
 
-      if (searchResults.length === 0) { dropdown.classList.remove('visible'); return; }
+      if (searchResults.length === 0) {
+        dropdown.innerHTML = '<div class="search-result" style="padding:10px;color:#888;text-align:center">No results found</div>';
+        dropdown.classList.add('visible');
+        return;
+      }
 
       let html = '';
       searchResults.forEach((result, idx) => {
-        const icon = result.type === 'file' ? 'FILE' : result.type === 'comment' ? 'CMT' : result.subtitle.includes('function') || result.subtitle.includes('method') ? 'FN' : result.subtitle.includes('class') ? 'CLS' : result.subtitle.includes('interface') ? 'INT' : 'SYM';
+        const file = repoData.files.find(f => f.path === result.id);
+        const filename = result.id.split('/').pop();
+        const symbolMatch = result.match?.symbolNames;
+        const summaryMatch = result.match?.summary || result.match?.fileComment;
+        const sub = summaryMatch ? escapeHtml(summaryMatch[0]) : (file?.summary ? escapeHtml(file.summary.substring(0, 80)) : result.id);
         html += `<div class="search-result" data-index="${idx}" onmouseenter="setSearchActive(${idx})" onclick="selectSearchResult(${idx})">`;
-        html += `<div class="search-result-type">${icon} ${result.type}</div>`;
-        html += `<div class="search-result-title">${highlightText(result.title, query)}</div>`;
-        html += `<div class="search-result-subtitle">${highlightText(result.subtitle, query)}</div>`;
+        html += `<div class="search-result-type">` + (symbolMatch ? 'FN' : 'FILE') + ` file</div>`;
+        html += `<div class="search-result-title">${escapeHtml(filename)}</div>`;
+        html += `<div class="search-result-subtitle">${escapeHtml(result.id)}</div>`;
+        html += `<div class="search-result-detail" style="font-size:11px;color:#888;margin-top:2px">${sub}</div>`;
         html += '</div>';
       });
       dropdown.innerHTML = html;
       dropdown.classList.add('visible');
 
-      const matches = allNodesData.filter(n =>
-        n.id.toLowerCase().includes(query) ||
-        (repoData?.files.find(f => f.path === n.id)?.symbols?.some(s => s.name.toLowerCase().includes(query))) ||
-        (repoData?.files.find(f => f.path === n.id)?.summary?.toLowerCase().includes(query)) ||
-        (repoData?.files.find(f => f.path === n.id)?.fileComment?.toLowerCase().includes(query)) ||
-        (repoData?.files.find(f => f.path === n.id)?.imports?.some(i => i.toLowerCase().includes(query)))
-      );
-
+      const matchedFiles = new Set(searchResults.map(r => r.id));
       nodesDataSet.update(allNodesData.map(n => ({
         id: n.id,
-        color: matches.includes(n) ? '#ffd700' : '#222',
-        size: matches.includes(n) ? n.size + 10 : n.size * 0.6
+        color: matchedFiles.has(n.id) ? '#ffd700' : '#222',
+        size: matchedFiles.has(n.id) ? n.size + 10 : n.size * 0.6
       })));
 
-      if (matches.length > 0) network.focus(matches[0].id, { animation: true });
+      if (searchResults.length > 0) network.focus(searchResults[0].id, { animation: true });
     });
 
     document.getElementById('search').addEventListener('keydown', function(e) {
@@ -767,9 +770,10 @@
       const result = searchResults[idx];
       if (!result) return;
       document.getElementById('searchDropdown').classList.remove('visible');
-      document.getElementById('search').value = result.title;
-      highlightNode(result.path);
-      if (result.type !== 'file') setTimeout(() => showSymbolCrossRef(result.title, result.line), 300);
+      document.getElementById('search').value = result.id.split('/').pop();
+      highlightNode(result.id);
+      const file = repoData.files.find(f => f.path === result.id);
+      if (file) showFileDetails(file.path, repoData);
     }
 
     function showSymbolCrossRef(symbolName, line) {
