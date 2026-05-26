@@ -12,11 +12,11 @@ const GO_STRUCT_RE = /^type\s+(\w+)\s+struct\s*\{/gm;
 const GO_INTERFACE_RE = /^type\s+(\w+)\s+interface\s*\{/gm;
 const GO_IMPORT_RE = /^import\s+(?:\(\n([\s\S]*?)\n\)|"([^"]+)")/gm;
 
-const RUST_FN_RE = /^\s*(?:pub\s+)?fn\s+(\w+)\s*(?:<[^>]*>)?\s*\(/gm;
-const RUST_STRUCT_RE = /^(?:pub\s+)?struct\s+(\w+)\s*(?:<[^>]*>)?\s*\{/gm;
-const RUST_ENUM_RE = /^(?:pub\s+)?enum\s+(\w+)\s*(?:<[^>]*>)?\s*\{/gm;
-const RUST_TRAIT_RE = /^(?:pub\s+)?trait\s+(\w+)\s*(?:<[^>]*>)?\s*\{/gm;
-const RUST_IMPL_RE = /^(?:pub\s+)?impl\s+(?:<[^>]*>\s+)?(\w+)(?:<[^>]*>)?\s*(?:for\s+\w+)?\s*\{/gm;
+const RUST_FN_RE = /^\s*(?:pub\s+)?fn\s+(\w+)\s*(?:<[^>]*>\s*)?\(/gm;
+const RUST_STRUCT_RE = /^(?:pub\s+)?struct\s+(\w+)\s*(?:<[^>]*>\s*)?\{/gm;
+const RUST_ENUM_RE = /^(?:pub\s+)?enum\s+(\w+)\s*(?:<[^>]*>\s*)?\{/gm;
+const RUST_TRAIT_RE = /^(?:pub\s+)?trait\s+(\w+)\s*(?:<[^>]*>\s*)?\{/gm;
+const RUST_IMPL_RE = /^(?:pub\s+)?impl\s+(?:<[^>]*>\s+)?(\w+)(?:\s*<[^>]*>)?(?:\s+for\s+\w+)?\s*\{/gm;
 const RUST_IMPORT_RE = /^(?:pub\s+)?use\s+(.+);/gm;
 const RUST_MOD_RE = /^(?:pub\s+)?mod\s+(\w+);/gm;
 
