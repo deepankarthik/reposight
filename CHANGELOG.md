@@ -166,3 +166,15 @@
 
 - fix(release): promote prerelease to stable on patch bump
 
+## v0.1.6 - 2026-05-26
+
+### Features
+
+- feat(web): natural language search with MiniSearch
+
+### Refactoring
+
+- refactor: improve type safety and simplify code
+- refactor: remove dead code and fix double summarization bug
+- refactor: remove dead code, simplify, fix bugs
+
