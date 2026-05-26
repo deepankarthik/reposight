@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RepoLens Explorer</title>
+  <title>RepoSight Explorer</title>
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.2/dist/umd/index.min.js"></script>
   <style>
@@ -75,8 +75,12 @@
     .btn:hover { background: var(--bg-hover); filter: brightness(1.2); color: var(--text-primary); }
     .btn-sm { margin: 0; padding: 2px 8px; font-size: 11px; }
 
+    .drop-zone { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg-primary); cursor: pointer; }
+    .drop-content { border: 2px dashed var(--border-light); border-radius: 12px; padding: 48px 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+    .drop-content:hover, .drop-content.dragover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent); }
+    #app { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .main { flex: 1; display: flex; overflow: hidden; }
-    #graph { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); }
+    #graph { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); min-height: 0; }
     #architecture { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; padding: 20px; }
     #dataflow { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; }
     #diff { flex: 1; background: color-mix(in srgb, var(--bg-primary) 95%, black); display: none; overflow: auto; padding: 20px; }
@@ -240,9 +244,23 @@
   </style>
 </head>
 <body>
+  <div id="drop-zone" class="drop-zone" style="display:none;">
+    <div class="drop-content">
+      <h2>Drop your ARCHITECTURE.json here</h2>
+      <p>or click to browse</p>
+      <input type="file" id="file-input" accept=".json" style="display:none">
+      <p id="file-warning" style="display:none; margin-top: 12px; font-size: 13px; max-width: 360px; line-height: 1.5; color: var(--accent);">
+        Browsers block local file access via <code>file://</code>.
+        Drag your file above, or run
+        <code style="background: rgba(0,0,0,0.1); padding: 1px 4px; border-radius: 3px;">reposight serve &lt;dir&gt;</code>
+        from the terminal.
+      </p>
+    </div>
+  </div>
+  <div id="app">
   <header>
     <div class="header-left">
-      <h1>RepoLens</h1>
+      <h1>RepoSight</h1>
       <span class="subtitle">Interactive Codebase Explorer</span>
       <div class="tabs">
         <button class="tab active" onclick="showTab('graph')">Graph</button>
@@ -268,6 +286,7 @@
         <p>Click a node to explore</p>
       </div>
     </div>
+  </div>
   </div>
 
   <script>
@@ -337,13 +356,26 @@
     }
 
     async function loadRepoData() {
+      if (window.location.protocol === 'file:') {
+        console.warn('file:// blocks local file reads. Drop ARCHITECTURE.json or use a local server.');
+        showDropZone();
+        return;
+      }
       try {
         const response = await fetch('./ARCHITECTURE.json');
         if (!response.ok) throw new Error('Failed to load');
         repoData = await response.json();
-      } catch {
-        repoData = getEmbeddedData();
+      } catch (err) {
+        console.warn('fetch failed:', err);
+        showDropZone();
+        return;
       }
+      loadData(repoData);
+    }
+
+    function loadData(data) {
+      repoData = data;
+      hideDropZone();
       initMiniSearch();
       crossRefIndex = buildCrossRefIndex();
       initGraph(repoData);
@@ -363,26 +395,53 @@
       });
     }
 
-    function getEmbeddedData() {
-      return {
-        version: "0.1.0",
-        summary: { includedFiles: 24 },
-        files: [
-          { path: "packages/ai/src/doc-generator.ts", language: "typescript", summary: "AI document generation module. Defines functions for generating architecture summaries, trace explanations, and diff analysis using AI providers.", symbols: [{name:"callProvider",kind:"function",line:35},{name:"generateArchitectureSummary",kind:"function",line:56}], imports: ["@repolens/shared","./types.js"] },
-          { path: "packages/ai/src/index.ts", language: "typescript", summary: "Entry point for the AI module. Re-exports provider factory, local/remote providers, and document generation functions.", symbols: [], imports: ["./local-provider.js","./provider-factory.js","./remote-provider.js","./types.js"] },
-          { path: "packages/ai/src/provider-factory.ts", language: "typescript", summary: "Factory function for creating AI providers. Decides between local and remote providers based on API key configuration.", symbols: [{name:"createAIProvider",kind:"function",line:6}], imports: ["@repolens/shared","./local-provider.js","./remote-provider.js"] },
-          { path: "packages/ai/src/remote-provider.ts", language: "typescript", summary: "Production AI provider that makes HTTP calls to OpenAI-compatible endpoints with SSE streaming.", symbols: [{name:"RemoteAIProvider",kind:"class",line:55},{name:"streamChat",kind:"method",line:62}], imports: ["@repolens/shared","./types.js"] },
-          { path: "packages/ai/src/types.ts", language: "typescript", summary: "Type definitions for the AI module. Defines AIProvider interface and AIStreamRequest types.", symbols: [{name:"AIProvider",kind:"interface",line:9}], imports: ["@repolens/shared"] },
-          { path: "packages/context-engine/src/cache.ts", language: "typescript", summary: "File caching system with mtime-based invalidation.", symbols: [{name:"FileCache",kind:"class",line:5},{name:"get",kind:"method",line:12},{name:"set",kind:"method",line:20}], imports: [] },
-          { path: "packages/context-engine/src/cached-scanner.ts", language: "typescript", summary: "Core scanner that orchestrates file discovery, scoring, and reading.", symbols: [{name:"scanRepository",kind:"function",line:264}], imports: ["./chunker.js","./ignore.js","./language.js","./symbol-extractor.js","./cache.js","./import-graph.js"] },
-          { path: "packages/context-engine/src/import-graph.ts", language: "typescript", summary: "Import graph builder that resolves dependencies between files.", symbols: [{name:"buildImportGraph",kind:"function",line:107}], imports: [] },
-          { path: "packages/context-engine/src/index.ts", language: "typescript", summary: "Entry point for the context-engine module. Re-exports all public APIs.", symbols: [], imports: ["./cache.js","./cached-scanner.js","./import-graph.js","./symbol-extractor.js"] },
-          { path: "packages/context-engine/src/symbol-extractor.ts", language: "typescript", summary: "Multi-language symbol extraction using AST (TypeScript/JavaScript) and regex patterns (Python, Go, Rust, Java).", symbols: [{name:"extractSymbols",kind:"function",line:379}], imports: ["typescript"] },
-          { path: "packages/shared/src/config.ts", language: "typescript", summary: "Configuration management with environment variable loading and .repolensrc.json file support.", symbols: [{name:"readConfigFromEnv",kind:"function",line:41},{name:"loadConfigFile",kind:"function",line:68}], imports: [] },
-          { path: "packages/shared/src/types.ts", language: "typescript", summary: "Core type definitions for the entire project.", symbols: [{name:"CodeSymbol",kind:"interface",line:3},{name:"ContextFile",kind:"interface",line:9}], imports: [] },
-          { path: "apps/cli/src/index.ts", language: "typescript", summary: "CLI entry point with scan, trace, diff, and init commands.", symbols: [{name:"runScan",kind:"function",line:21},{name:"runTrace",kind:"function",line:90}], imports: ["@repolens/shared","@repolens/context-engine","@repolens/ai"] },
-        ]
+    function showDropZone() {
+      document.getElementById('drop-zone').style.display = 'block';
+      document.getElementById('app').style.display = 'none';
+      const warn = document.getElementById('file-warning');
+      if (warn) warn.style.display = window.location.protocol === 'file:' ? 'block' : 'none';
+    }
+
+    function hideDropZone() {
+      document.getElementById('drop-zone').style.display = 'none';
+      document.getElementById('app').style.display = '';
+    }
+
+    function initDragDrop() {
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+      dropZone.addEventListener('click', () => fileInput.click());
+      window.addEventListener('dragover', (e) => { e.preventDefault(); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (!file || !file.name.endsWith('.json')) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try { loadData(JSON.parse(event.target.result)); }
+          catch { alert('Invalid JSON file'); }
+        };
+        reader.readAsText(file);
+      });
+      fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    function handleFileSelect(e) {
+      const fileInput = document.getElementById('file-input');
+      const file = fileInput.files[0] || (e.dataTransfer ? e.dataTransfer.files[0] : null);
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          loadData(data);
+        } catch {
+          alert('Invalid JSON file');
+        }
       };
+      reader.readAsText(file);
     }
 
     function showTab(tab) {
@@ -1012,11 +1071,8 @@
       const url = window.location.href;
       const match = url.match(/github\.com\/([^/]+\/[^/]+)/);
       if (match) return match[1];
-      const embedded = getEmbeddedData();
-      if (embedded.files.length > 0) {
-        const firstFile = embedded.files[0].path;
-        const parts = firstFile.split('/');
-        if (parts[0] === 'apps' || parts[0] === 'packages') return 'deepankarthik/reposight';
+      if (repoData && repoData.summary && repoData.summary.rootDir) {
+        return repoData.summary.rootDir.split('/').slice(-2).join('/');
       }
       return '';
     }
@@ -1144,6 +1200,7 @@
     }
 
     initTheme();
+    initDragDrop();
     loadRepoData();
   </script>
 </body>
