@@ -4,7 +4,7 @@ import type { CodeSymbol } from "@reposight/shared";
 const MAX_SYMBOLS = 60;
 
 const PYTHON_FUNC_RE = /^(\s*)def\s+(\w+)\s*\(/gm;
-const PYTHON_CLASS_RE = /^(\s*)class\s+(\w+)\s*[:\(]/gm;
+const PYTHON_CLASS_RE = /^(\s*)class\s+(\w+)\s*[:(]/gm;
 const PYTHON_IMPORT_RE = /^(?:from\s+(\S+)\s+)?import\s+(.+)/gm;
 
 const GO_FUNC_RE = /^func\s+(?:\(\s*\w+\s+\*?\w+\s*\)\s+)?(\w+)\s*\(/gm;
@@ -21,7 +21,7 @@ const RUST_IMPORT_RE = /^(?:pub\s+)?use\s+(.+);/gm;
 const RUST_MOD_RE = /^(?:pub\s+)?mod\s+(\w+);/gm;
 
 const JAVA_CLASS_RE = /^(?:public\s+|abstract\s+|final\s+)*(?:class|interface|enum)\s+(\w+)/gm;
-const JAVA_METHOD_RE = /^\s*(?:public|private|protected|static|final|abstract|synchronized|\s)+[\w<>\[\],\s]+\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{/gm;
+const JAVA_METHOD_RE = /^\s*(?:public|private|protected|static|final|abstract|synchronized|\s)+[\w<>[\] ,\s]+\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{/gm;
 const JAVA_IMPORT_RE = /^import\s+(static\s+)?([\w.*]+);/gm;
 
 function extractLeadingComment(source: string, lines: string[], symbolLine: number): string | undefined {

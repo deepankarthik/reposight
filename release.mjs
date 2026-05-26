@@ -185,11 +185,12 @@ async function main() {
     case "1": bumpType = "patch"; break;
     case "2": bumpType = "minor"; break;
     case "3": bumpType = "major"; break;
-    case "4":
+    case "4": {
       bumpType = "prerelease";
       const id = await prompt("  Prerelease identifier (alpha/beta/rc): ");
       prereleaseId = id.trim() || "alpha";
       break;
+    }
     default:
       console.error("\n  ✗ Invalid choice");
       process.exit(1);
@@ -255,11 +256,9 @@ async function main() {
   }
 
   // Update CHANGELOG.md
-  let existingChangelog = "";
+  let existingChangelog;
   if (existsSync(CHANGELOG_PATH)) {
-    existingChangelog = readFileSync(CHANGELOG_PATH, "utf8");
-    // Remove trailing whitespace
-    existingChangelog = existingChangelog.trimEnd();
+    existingChangelog = readFileSync(CHANGELOG_PATH, "utf8").trimEnd();
   } else {
     existingChangelog = "# Changelog\n";
   }

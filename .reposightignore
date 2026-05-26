@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.git/
+*.tsbuildinfo
+.vite/
+.env
+.env.local
+ARCHITECTURE.json
+ARCHITECTURE.md

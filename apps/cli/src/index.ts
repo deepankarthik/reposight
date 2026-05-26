@@ -159,10 +159,15 @@ async function runScan(dir: string, outputDir: string, options: { noMermaid?: bo
     summarize: options.summarize,
     aiSummarizeFn,
     onProgress: (progress) => {
-      process.stderr.write(`\r${formatProgress(progress)}`);
+      const msg = formatProgress(progress);
+      if (process.env.GITHUB_ACTIONS) {
+        process.stdout.write(msg + "\n");
+      } else {
+        process.stderr.write("\r" + msg);
+      }
     }
   }, cache);
-  process.stderr.write("\n");
+  if (!process.env.GITHUB_ACTIONS) process.stderr.write("\n");
 
   log.info("scan complete", {
     files: context.summary.includedFiles,

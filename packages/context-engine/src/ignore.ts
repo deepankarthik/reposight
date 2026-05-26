@@ -78,7 +78,7 @@ function gitignoreToRegex(pattern: string): RegExp {
   const isDir = pattern.endsWith("/");
   const isAnchored = pattern.startsWith("/");
 
-  let core = pattern
+  const core = pattern
     .replace(/^\//, "")
     .replace(/\/$/, "")
     .replace(/\./g, "\\.")

@@ -136,7 +136,7 @@ export async function buildImportGraph(
     const importerDir = path.dirname(file.absolutePath);
 
     for (const importSpec of file.imports) {
-      let resolved: string | null = null;
+      let resolved: string | null;
 
       if (importSpec.startsWith(".") || importSpec.startsWith("/")) {
         resolved = resolveImportPath(importerDir, importSpec, rootDir);
