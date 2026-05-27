@@ -887,17 +887,19 @@ html += '</div>';
     function exportGraph() {
       const canvas = document.querySelector('#graph canvas');
       if (!canvas) return;
-      const c = document.createElement('canvas');
-      c.width = canvas.width;
-      c.height = canvas.height;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(canvas, 0, 0);
+      const ctx = canvas.getContext('2d');
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const bg = getComputedStyle(document.getElementById('graph')).backgroundColor;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
       const link = document.createElement('a');
       link.download = 'reposight-graph.png';
-      link.href = c.toDataURL('image/png');
+      link.href = canvas.toDataURL('image/png');
       link.click();
+      ctx.putImageData(data, 0, 0);
     }
 
     async function viewFileSource(filePath) {
