@@ -178,3 +178,48 @@
 - refactor: remove dead code and fix double summarization bug
 - refactor: remove dead code, simplify, fix bugs
 
+## v0.1.7 - 2026-05-27
+
+### Features
+
+- feat(web): enhance drop zone with branding, icon, description, loading state
+- feat(web): add GitHub Pages workflow for deployment
+
+### Bug Fixes
+
+- fix: use theme-aware background in PNG export via destination-over compositing
+- fix: export PNG with white background instead of transparent
+- fix: ReDoS in JAVA_METHOD_RE - three nested space-matching sources
+- fix: DOM XSS - escape getRepoPath() and result.id in innerHTML
+- fix: ReDoS in RUST_IMPORT_RE - greedy .+ matching semicolons
+- fix: ReDoS vulnerability in Rust regexes (nested quantifiers in symbol-extractor)
+- fix: add types node to tsconfig for NodeJS namespace resolution
+- fix(web): split diff drop zone into two separate zones for base and head
+- fix(web): address security and maintainability review feedback
+- fix(web): center drop zone and enhance visual design
+- fix(web): restore layout, add file:// drop-zone with drag-and-drop
+
+### Documentation
+
+- docs: add live demo link to Interactive Explorer section
+- docs: remove why reposight section, update beta status, document .reposightignore
+
+### Chores
+
+- chore(deps): bump typescript from 5.9.3 to 6.0.3 (#7)
+- chore(deps): bump @actions/github from 6.0.1 to 9.1.1 (#6)
+- chore(deps): bump @actions/exec from 1.1.1 to 3.0.0 (#5)
+- chore(deps-dev): bump vitest from 4.1.6 to 4.1.7 (#4)
+- chore(deps): bump github/codeql-action from 3 to 4 (#3)
+- chore(deps): bump actions/upload-pages-artifact from 4 to 5 (#2)
+- chore(deps): bump actions/checkout from 5 to 6 (#1)
+- chore: polish and ship — license, linting, CI hardening, contributing guide
+
+### CI/CD
+
+- ci: add workflow_dispatch trigger to CodeQL
+
+### Other
+
+- Potential fix for code scanning alert no. 10: Incomplete string escaping or encoding (#11)
+
