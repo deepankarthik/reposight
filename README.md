@@ -10,7 +10,7 @@ RepoSight scans a repository, extracts its architecture (files, symbols, imports
 
 **No code leaves your machine.** Everything runs locally.
 
-> **Experimental:** This project is under active development. Expect bugs, breaking changes, and incomplete features. Use at your own risk.
+> **Beta:** This project is under active development. Expect breaking changes and incomplete features.
 
 ## Quick Start
 
@@ -37,19 +37,6 @@ Or use without installing:
 ```bash
 npx reposight scan .
 ```
-
-## Why RepoSight?
-
-| | RepoSight | CodeSee | Sourcegraph |
-|---|---|---|---|
-| **Cost** | Free, open-source | $49+/user/month | $49+/user/month |
-| **Setup** | `npx reposight scan .` | SaaS signup, GitHub app | Self-host or cloud |
-| **Data** | Stays in your repo | Stored on their servers | Stored on their servers |
-| **AI** | Optional, delta-only | Required | Required |
-| **Offline** | Full support | No | No |
-| **Self-hosted** | Yes | No | Limited |
-
-**RepoSight is the `prettier` of architecture docs** — run it, get docs, done. No SaaS, no signup, no pricing tiers.
 
 ## Features
 
@@ -188,6 +175,8 @@ Create a `.reposightrc.json` in your repo root:
 }
 ```
 
+A `.reposightignore` file in the repo root works like `.gitignore` — patterns listed are excluded from scanning.
+
 Or use environment variables:
 
 | Variable | Default | Purpose |
@@ -199,7 +188,7 @@ Or use environment variables:
 
 ## How It Works
 
-1. **Discover** — Walk the directory tree, respecting `.gitignore` and generated file patterns
+1. **Discover** — Walk the directory tree, respecting `.gitignore`, `.reposightignore`, and generated file patterns
 2. **Score** — Rank files by import depth, git recency, test pairing, and directory proximity
 3. **Extract** — Parse symbols (AST for TS/JS, regex for others), extract comments (JSDoc, docstrings, `//`), and build import graphs
 4. **Summarize** — Generate heuristic descriptions from file comments, symbol comments, paths, and imports
