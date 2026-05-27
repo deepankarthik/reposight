@@ -119,6 +119,8 @@ The web UI provides a visual way to explore any codebase:
 7. **Dark/Light Mode** — Toggle between themes.
 8. **Export** — Download the graph as a PNG image.
 
+> **Live demo:** Try it now at [`deepankarthik.github.io/reposight`](https://deepankarthik.github.io/reposight/) — loaded with this repo's architecture.
+
 **Viewing options:**
 
 ```bash
