@@ -34,7 +34,7 @@
   ],
   "scripts": {
     "build": "cd ../.. && node build-cli.mjs",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx src/index.ts"
   },
